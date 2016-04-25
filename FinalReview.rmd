@@ -1,0 +1,584 @@
+---
+title: "Final REview shee"
+author: "Zuo Siqi"
+date: ""
+output: 
+  html_document:
+    fig_height: 3
+    fig_width: 5
+---
+<!-- Don't edit in between this line and the one below -->
+```{r include=FALSE}
+# Don't delete this chunk if you are using the DataComputing package
+library(DataComputing)
+library(printr)
+```
+*Source file* 
+```{r, results='asis', echo=FALSE}
+includeSourceDocuments()
+```
+<!-- Don't edit the material above this line -->
+
+
+
+## Regular expressions (chapter 16)
+
+A __regular expression__ (regex) is a pattern that describes a set of strings.
+
+example: The regex "[a-cx-z]"" matches "a","b","c","x","y","z"
+
+example: The regex "ba+d"" matches "bad", "baad", "baaad" etc but not "bd"
+
+### Examples of accomplishing tasks with regular expressions.
+
+```{r}
+NameList <- BabyNames %>% 
+  mutate( name=tolower(name) ) %>%
+  group_by( name, sex ) %>%
+  summarise( total=sum(count) ) %>%
+  arrange( desc(total)) 
+```
+
+
+* The name contains "shine", as in "sunshine" or "moonshine"
+    ```{r}
+NameList %>% 
+  filter( grepl( "shine", name ) ) %>% 
+  head()
+```
+
+* The name contains three or more vowels in a row.
+
+```{r}
+NameList %>% 
+  filter( grepl( "[aeiou]{3,}", name ) ) %>% 
+  head()
+```
+
+* The name contains three or more consonants in a row.
+
+```{r}
+NameList %>% 
+  filter( grepl( "[^aeiou]{3,}", name ) ) %>% 
+  head()
+```
+
+* The name contains "mn"
+
+```{r}
+NameList %>% 
+  filter( grepl( "mn", name ) ) %>% 
+  head()
+```
+
+* The first, third, and fifth letters are consonants.
+
+```{r}
+NameList %>% 
+  filter( grepl( "^[^aeiou].[^aeiou].[^aeiou]", name ) ) %>% 
+  head()
+```
+
+* How often do boys' and girls' names end in vowels?
+
+```{r}
+NameList %>%
+  filter( grepl( "[aeiou]$", name ) ) %>% 
+  group_by( sex ) %>% 
+  summarise( total=sum(total) )
+```
+
+* What are the most common end vowels for names?
+
+To answer this question, you have to extract the last vowel from the name.  The `extractMatches()` transformation function can do this.  
+
+```{r}
+NameList %>% 
+  extractMatches( "([aeiou])$", name, vowel=1 ) %>%
+  group_by( sex, vowel ) %>% 
+  summarise( total=sum(total) ) %>%
+  arrange( sex, desc(total) )
+```
+
+
+#### 2. Here are some examples of data cleaning a table downloaded from the web.
+
+
+
+```{r,echo=FALSE, include=FALSE}
+Debt <- data.frame(country=c("World","United States", "Japan"),debt=c("$56,308 billion", "$17,607 billion","$9,872 billion"), percentGDP=c("64%","73.60%","214.30%"))
+
+```
+
+
+* Get rid of percent signs and commas in numerals
+
+Numbers often come with comma separators or unit symbols such as % or $.  For instance, here is part of a table about public debt from [Wikipedia](http://en.wikipedia.org/wiki/Government_debt).
+
+```{r}
+head(Debt,3)
+```
+
+To use these numbers for computations, they must be cleaned up.
+
+```{r}
+Debt %>% 
+  mutate( debt=gsub("[$,%]|billion","",debt),
+          percentGDP=gsub("[,%]", "", percentGDP)) %>%
+  head(3)
+```
+
+* Remove a currency sign 
+
+```{r}
+gsub("^\\$|â,¬|¥|£|$","", c("$100.95", "45Â¢"))
+```
+
+* Remove leading or trailing spaces
+
+```{r}
+gsub( "^ +| +$", "", "   My name is Julia     ")
+```
+
+
+### Reading Regular Expressions
+
+There are simple regular expressions and complicated ones.  All of them look foreign until you learn how to read them.
+
+
+Some basics:
+
+* Very simple patterns:
+    * A single `.` means "any character."
+    
+    * A character, e.g., `b`, means just that character.
+    
+    * Characters enclosed in square brackets, e.g., `[aeiou]` means any of those characters.  (So, `[aeiou]` is a pattern describing a vowel.) 
+    
+    * The `^` inside square brackets means "any except these."  So, a consonant is `[^aeiou]`
+    
+* Alternatives.  A vertical bar means "either."  For example `(A|a)dam` matches `Adam` and `adam`
+
+* Repeats
+
+     * Two simple patterns in a row, means those patterns consecutively.  Example: `M[aeiou]` means a capital M followed by a lower-case vowel.
+     
+     * A simple pattern followed by a `+` means "one or more times." For example `M(ab)+` means `M` followed by one or more `ab`.  
+     
+     * A simple pattern followed by a `?` means "zero or one time."
+     
+     * A simple pattern followed by a `*` means "zero or more times."
+     
+     * A simple pattern followed by `{2}` means "exactly two times."  Similarly, `{2,5}` means between two and five times, `{6,}` means six times or more.
+     
+* Start and end of strings.  For instance, `[aeiou]{2}` means "exactly two vowels in a row."
+
+    * `^` at the beginning of a regular expression means "the start of the string"
+    
+    * `$` at the end means "the end of the string."
+    
+Note: you can experiment with `grepl(pattern,x)` for example:
+```{r}
+x <- c("hi mabc","abc","abcd","abccd","abcabcdx","cab","abd","cad")
+```
+
+```{r}
+x[grepl("abc",x)]
+```
+
+```{r}
+x[grepl("^abc",x)]
+```
+
+```{r}
+x[grepl("abc.d",x)]
+```
+
+```{r}
+x[grepl("abc+d",x)]
+```
+
+```{r}
+x[grepl("abc?d",x)]
+```
+
+```{r}
+x[grepl("abc$",x)]
+```
+
+```{r}
+x[grepl("abc.*d",x)]
+```
+
+```{r}
+x[grepl("abc*d",x)]
+```
+
+```{r}
+x[grepl("abc?",x)]
+```
+
+```{r}
+x[grepl("a[bd]",x)]
+```
+
+```{r}
+x[grepl("a[b|d]",x)]
+```
+
+```{r}
+x[grepl("a[b?d]",x)]
+```
+
+Example:
+```{r}
+c("hello.bye", "adam")[grepl("[a\\.]", c("hello.bye", "adam"))]
+```
+
+```{r}
+x <- c ("a0b", "a1b","a12b")
+x[grepl("a[[:digit:]]b",x)]
+```
+
+```{r}
+x <- c (3,"a","b","?")
+x[grepl("[[:digit:]abc]",x)]
+```
+
+## Task for you
+Write a regular expression that matches
+
+1. only the strings "cat","at","t"
+
+```{r}
+x <- c("cat","at","t","ta","ct")
+x[grepl("^(ca|a)?t$",x)]
+
+```
+
+```{r}
+#Doesn't work
+x <- c("cat","at","t","ta","ct")
+x[grepl("^c?a?t$",x)]
+
+```
+
+2. the strings "cat", "caat", "caaat", and so on.
+
+```{r}
+x <- c("cat","caat","caaat")
+x[grepl("^ca+t$",x)]
+```
+
+
+3. (i.e., the word dog in any combination of upper and lower case)
+```{r}
+x <- c("dog", "Dog" , "dOg", "doG" , "DOg")
+grepl("(d|D)(o|O)(g|G)",x)
+```
+
+
+Write a regular expression that matches
+
+1. Any number  (ex -56.899 or 0)
+
+```{r}
+x <- c(1, +12.4,-56.899,  0, -23, .000, -0, "4.5.3")
+x[grepl("^[-+]?[0-9]+\\.?[0-9]*$",x)]
+#or
+x[grepl("^[-+]?[[:digit:]]+\\.?[[:digit:]]*$",x)]
+```
+
+
+2. any line with exactly two words separated by any amount of whitespace (spaces or tabs). There may or may not be whitespace at the beginning or end of the line.
+```{r}
+x <- c("   stats rocks", "I love stats")
+x[grepl("^[[:blank:]]*[[:alpha:]]+[[:blank:]]+[[:alpha:]]+[[:blank:]]*$",x)]
+
+```
+
+* to replace the elements of that pattern with something else. Use `mutate()` and `gsub()`
+
+details:
+
+1. `gsub()` searches for matches to argument regexp within each element of a character vector and performs replacement of all matches
+ 
+2. syntax:`gsub(regex, replacement, vec)`
+
+```{r,echo=FALSE, include=FALSE}
+Debt <- data.frame(country=c("World","United States", "Japan"),debt=c("$56,308 billion", "$17,607 billion","$9,872 billion"), percentGDP=c("64%","73.60%","214.30%"))
+
+```
+
+Clean up the Debt data table below so it only has numbers
+
+```{r}
+head(Debt)
+```
+
+```{r}
+Debt %>% 
+  mutate( debt=gsub("[$,]|billion","",debt),
+          percentGDP=gsub("%", "", percentGDP))
+```
+
+
+* to pull out the matches for marked regions of regular expressions use `extractMatches()` from the DataComputing package.
+
+Details:
+
+1. input is a data table and output is a data table with one or more additional columns with the extractions
+
+2. syntax is `df %>% extractMatches(regex, var,...)` 
+
+3. wrap part of the regexp in parentheses to signal that the matching content is to be extracted as a string
+
+4. when there is no match `extractMatches()` returns `NA`
+example
+
+```{r}
+data.frame(string=c("hi there there","bye")) %>% extractMatches("r(e)",string)
+
+```
+
+
+What are the most common end vowels for Bible names?
+
+To answer this question, you have to extract the last vowel from the name.  The `extractMatches()` transformation function can do this.  
+
+```{}
+BibleNames %>% 
+  extractMatches( "([aeiou])$", name, vowel=1) %>% 
+  group_by(vowel ) %>% 
+  summarise( total= n()) %>%
+  arrange( vowel, desc(total) )
+```
+
+What Bible Names start and end with a vowel?
+
+```{}
+BibleNames %>% 
+  extractMatches( "^([AEIOU]).*([aeiou])$", name, beg_vowel=1, end_vowel=2) %>% 
+  filter(!is.na(beg_vowel) & !is.na(end_vowel)) %>%
+  select(-meaning) %>%
+  head()
+```
+
+
+#Tasks for you
+
+1. Which Bible names in `BibleNames` have the word "man" in the meaning (not first or last word)?
+
+```{}
+BibleNames %>% 
+  filter(grepl("[[:blank:]]+man[[:blank:]]+",meaning))
+```
+
+2. Grab everything but the last letter of `names` in `BibleNames` that end with a vowel (example: Grab Ev from Eva)
+
+```{}
+BibleNames %>% 
+  extractMatches(pattern="(.*)[aeiouy]$", name, root=1) %>% 
+  filter(!is.na(root)) %>%
+  select(-meaning) %>%
+  head()
+```
+
+
+```{}
+Ctrl + A	Go to the beginning of the line you are currently typing on
+Ctrl + E	Go to the end of the line you are currently typing on
+Ctrl + L              	Clears the Screen, similar to the clear command
+Ctrl + U	Clears the line before the cursor position. If you are at the end of the line, clears the entire line.
+Ctrl + H	Same as backspace
+Ctrl + R	Let's you search through previously used commands
+Ctrl + C	Kill whatever you are running
+Ctrl + D	Exit the current shell
+Ctrl + Z	Puts whatever you are running into a suspended background process. fg restores it.
+Ctrl + W	Delete the word before the cursor
+Ctrl + K	Clear the line after the cursor
+Ctrl + T	Swap the last two characters before the cursor
+Esc + T	Swap the last two words before the cursor
+Alt + F	Move cursor forward one word on the current line
+Alt + B	Move cursor backward one word on the current line
+Tab	Auto-complete files and folder names
+
+EXAMPLES:   
+`pwd`,  
+`mkdir unixexamples`,  
+`cd unixexamples`,  
+`ls`,  
+`ls -a`  
+`ls -l`
+
+`ls -a` means to show all files, including the hidden files starting with a dot
+
+The two hidden files here are special and exist in every directory. refers to the current directory,refers to the directory above it.
+
+`ls -l` shows the size of the files which can be useful.
+
+This brings us to the distinction between relative and absolute path names. (Think of a path like an address in UNIX, telling you where you are in the directory tree.) 
+
+You may have noticed that I typed `cd unixexamples`, rather than `cd /Users/Adam/unixexamples`.
+
+The first is the relative path; the second is the absolute path.
+
+To refer to a file, you need to either be in the directory where the file is located, or you need to refer to it using a relative or absolute path name.
+
+EXAMPLES:   
+`pwd`,  
+`echo "Testing 1 2 3" > test.txt`,  
+`ls`,  
+`cat test.txt`,    
+`cd ..`,  
+`cat test.txt`,  
+`cat unixexamples/test.txt`
+
+`pwd`   print working directory  
+`ls`  list contents of current directory  
+`ls -a`  list contents, including hidden files  
+`ls -l`  list contents, including size of files  
+`mkdir` creat a new directory  
+`cd dname` change directory to dname    
+`cd ..`  change to parent directory    
+`cd ~`  change to home directory   
+`mv`  move or rename a file    
+`touch` create a new empty file   
+`rm`   remove a file    
+`rm -r` remove all lower level files     
+`wc -l`  count the number of lines in a file     
+`head -5`  look at the first 5 lines of a file   
+`cat` print contents of a file    
+`tail` look at end of file    
+`cp` copy a file   
+`echo` display a line of text written in the terminal   
+`wget` download a file from the web  
+
+
+`cat ~/book/ch02/data/movies.txt`,  
+`wc -l ~/book/ch02/data/movies.txt`,   
+`head -2 ~/book/ch02/data/movies.txt`,   
+`echo hello world!`,   
+`touch test`,   
+`wget houses.csv http://www.mosaic-web.org/go/datasets/SaratogaHouses.csv`,   
+`head houses.csv`
+
+
+EXAMPLES:   
+`ls -a book > text`,   
+`cat text`,   
+`sort -r text > text`,   
+`cat text`, `cat`,   
+`echo hello friend >> text`,   
+`cat`,   
+`cat >> text`
+
+The idea behind _pipes_ is that rather than redirecting output to a file, we redirect it into another command. This is analygous to pipes `%>%` in the `dplyr` package.
+
+Another way to say this is that output of one command is used as input to another command.
+
+EXAMPLES:   
+`cat > somenumbers.txt`,  
+`cat somenumbers.txt | uniq | sort`
+
+Here are two more useful filters:
+
+`egrep` - print lines matching a pattern (regex)
+
+EXAMPLE:   
+`egrep e *.txt`  will print all lines in any file ending with .txt which contain the regex e.
+
+`cut` - select portions of each line of a file
+
+EXAMPLE:   
+`cat houses.csv | cut -d ',' -f 2-4 | head `
+```
+
+
+```{}
+Sed has many uses but we will focus on sed for substitution
+__syntax__: `sed s/regex/replacement/FLAG file`   OR
+`cat file |  sed s/regex/replacement/FLAG`
+FLAGS can be any of the following:
+
+* nothing  Replace only first instance of Regexp with replacement
+* g Replace all the instances of Regexp with replacement
+* n Could be any number, replae nth instance of regex with replacement
+* i match Regex in a case insensitive manner.
+
+EXAMPLE:   
+` echo one two three, three two one, one one hundred > file`
+` cat file | sed s/one/ONE/g`  
+
+
+EXAMPLE:   
+`echo day sunday | sed s/day/night/`
+
+## 3. Converting one liners at the command line into a shell scipt
+
+In lecture 27 we saw the following commands to make a file called `small_potatoes`
+
+`wget -O potatoes.txt http://s3.amazonaws.com/assets.datacamp.com/course/importing_data_into_r/potatoes.txt`  
+`cat potatoes.txt | cut -f 1-2 > small_potatoes`  
+`head small_potatoes`  
+
+Suppose we would like to actually make this into a script that we can reuse.
+
+Steps:
+
+1. type nano potatoes.sh  
+2. copy and paste the above commands  
+3. define a hashbang  (#!/usr/bin/env bash)
+4. add permission to execute (chmod u+x potatoes.sh)
+5. parameterize (./potatoes.sh 3)
+
+```
+
+###Steps to find top 5 producers of apricots:
+
+1. _Download the data for apricots_. 
+
+Solution:
+
+lets make a new directory called `apricots`
+
+`mkdir apricots`  
+`cd apricots`
+
+Download  the data from the URL.
+Note that you may need to put the http address inside double quotes when using `wget` to download it since there is the metacharacter `?` in the URL.
+
+`wget -O temp.zip "http://data.un.org/Handlers/DownloadHandler.ashx?DataFilter=itemCode:526&DataMartId=FAO&Format=csv&c=2,3,4,5,6,7&s=countryName:asc,elementCode:asc,year:desc"`
+
+`rm UN*
+
+`unzip -o temp.zip`       -o means overwrite existing file
+
+`mv UN* file.csv` 
+
+
+2. _Extract the data for individual countries into a separate file._
+
+View unzipped file with `less`
+
+`less file.csv`  
+
+`grep -v + file.csv > apricotCountries.csv`   
+
+Here -v is invert match. grep treats + as the literal character +. If you use egrep then + is treated as a metacharacter and you need to escape it (i.e. egrep -v "\+" file.csv)
+
+3. _Then subset the country-level data to the year 2005. Based on the â???oarea harvested determine the five countries using the most land to produce apricots._
+
+We need to clean up the data first.
+
+Notice that some countries and regions have commas in the country name (ex Iran, Islamic Republic of). Here is a fix.
+
+`cat apricotCountries.csv | sed "s/, / /g" > apricotCountries1.csv`
+
+Notice we need to remove " so that we can sort numerically, and we only care about "Area Harvested".
+
+`cat apricotCountries1.csv | sed "s/\"//g"  | grep Harvested  > apricotCountries_clean.csv` 
+
+Note: We need to escape the " character with a forward slash
+
+`cat apricotCountries_clean.csv | grep 2005 | sort -t ','  -n -k 6 -r | cut -d ',' -f 1,6 | sed "s/,/   /g" | head -n5`     Note: expression after sed in quotes because space is a metacharacter

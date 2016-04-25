@@ -1,0 +1,127 @@
+---
+title: "lecture 6"
+author: "Adam Lucas"
+date: ""
+output: 
+  html_document:
+    fig_height: 3
+    fig_width: 5
+---
+<!-- Don't edit in between this line and the one below -->
+```{r include=FALSE}
+# Don't delete this chunk if you are using the DataComputing package
+library(DataComputing)
+library(NHANES)
+library(xkcd)
+```
+*Source file* 
+```{r, results='asis', echo=FALSE}
+includeSourceDocuments("~/Desktop/lec6.Rmd")
+```
+<!-- Don't edit the material above this line -->
+# For homeworks from now on please submit an html r-markdown file with .Rmd file embedded in it.
+For example, to make .Rmd:  
+
+In Rstudio  New File/R Markdown then From Template/ simple HTML. 
+
+To embed the source code .Rmd in your html document read my instructions in Wednesday’s lecture in the section heading [Embedded Files within HTML files](http://rpubs.com/alucas/147818)
+
+To submit your html document save it on your computer. Then upload it to b-courses like you would upload any other document. You are allowed to upload multiple documents for your assignment. Don’t use RPubs since then other students can go to the RPubs website and see your solution.
+
+
+# This week
+We will introduce graphing in R using ggplot
+steps:
+1. We will look at some different kinds of graphs that we are able to make (chapter 5)
+2. We will discuss the component parts of our graphs (frames, scales, guides, facets, layers)  (chap 6)
+3. We will make our data tables ready for graphing (chap 7)
+4. Introduce ggplot and the grammar of graphics (chap 8)
+
+Today: chapters 5 and 6
+
+```{r}
+ggplot(data=NHANES,aes(x=age,y=height))+geom_point()+aes(colour=sex)+facet_wrap(~sex,ncol=4) 
+```
+
+
+
+#Chapter 5 Introduction to Graphics
+
+### Scatter plots
+
+The main purpose of a scatter plot is to show the relationship between two variables across several or many cases.  Most often, there is a Cartesian coordinate system in which the x-axis represents one variable and the y-axis the value of a second variable.
+
+
+
+Example: Consider the NHANES data giving medical and morphometric measurements of individual people.  Here is a scatter plot showing the relationship between two variables: height and age.
+
+```{r echo=FALSE,warning=FALSE}
+data(NHANES)
+set.seed(208)
+NHANES %>% sample_n( size=1000 ) %>%
+  ggplot(aes(x=Age, y=Height)) + geom_point() + 
+  xlab("Age (years)") + ylab("Height (m)") -> pheight
+pheight
+```
+
+Each dot is one case.  The position of that dot signifies the value of the two variables for that case. 
+
+Your book uses the word *glyph* to describe the basic graphical unit that represents one case. A glyph means a mark or a symbol. A glyph in this example is a point.
+We say that the data table NHANES is *glyph ready* because we are able to convert the table into the above scatter plot.
+
+
+### Constructing a scatter plot interactively with `scatterGraphHelper()`
+
+steps:
+0. Make sure DataComputing is loaded
+1. In the console type `scatterGraphHelper(NHANES)` (it wont work in your r-markdown file since you need to interact with the function during compiing)
+2. Map variables in NHANES to attributes (*aesthetics*) of our glyph (ex color or size)
+
+Example:   
+map Age to x  
+map Height to y  
+map Sex to color  
+map Sex to facet  
+
+**Warning: These interactive functions are very buggy so don't fool around with it too much or you will crash Rstudio. In fact don't use any of the other interactive tools in this chapter besides scatterGraph**
+
+Volcabulary:
+
+*glyph*= graphical unit  (point)  
+*aesthetic*=  a visual property of the glyph  (position, shape, color)  
+*scale* = A mapping that translates data values to aesthetics (ex. male mapped to  blue, female  mapped to pink, Age is mapped to horizontal position, Height mapped to Vert posn.
+*frame* = The position scale describing how data are mapped to x and y
+*guide* An indication for human viewers of the scale
+
+##Your turn: 
+
+```{r}
+#load the data table at http://tiny.cc/dcf/table-6.2.csv
+my_table <-read.csv("http://tiny.cc/dcf/table-6-2.csv")
+head(my_table)
+```
+
+Make an interactive scatterplot with scatterGraphHelper()
+Answer:
+
+1. What variables constitute the frame?  
+2. What glyphs is used?
+3. What are the aesthetics for those glyphs?
+4. Which variable is mapped to each aethetic?
+5. Which variable, if any, is used for faceting?
+6. Which scales are displayed with a guide?
+
+
+#Other Graphs
+
+
+
+
+
+
+
+
+
+
+
+

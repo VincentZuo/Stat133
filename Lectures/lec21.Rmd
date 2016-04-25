@@ -1,0 +1,298 @@
+---
+title: "lec21"
+author: ""
+date: ""
+output: 
+  html_document:
+    fig_height: 3
+    fig_width: 5
+---
+<!-- Don't edit in between this line and the one below -->
+```{r include=FALSE}
+# Don't delete this chunk if you are using the DataComputing package
+library(DataComputing)
+library(printr)
+```
+*Source file* 
+```{r, results='asis', echo=FALSE}
+includeSourceDocuments()
+```
+
+```{r, echo=FALSE}
+show_answers <- FALSE
+knitr::opts_chunk$set(tidy=FALSE, message=FALSE)
+
+```
+
+<!-- Don't edit the material above this line -->
+
+#Announcements
+Comming attractions:
+
+1. Regular expressions  
+2. Data importing and cleaning
+3. Working at the command line
+4. Data Scraping (CSV, HTML, XML, JSON)  
+5. Machine Learning  
+6. Projects  
+
+# Today
+1. Regular expressions (chapter 16 book) -----Not on midterm
+
+## Regular expressions (chapter 16)
+
+A __regular expression__ (regex) is a pattern that describes a set of strings.
+
+example: The regex "[a-cx-z]"" matches "a","b","c","x","y","z"
+
+example: The regex "ba+d"" matches "bad", "baad", "baaad" etc but not "bd"
+
+Regular expressions are used for several purposes:
+
+* to detect whether a pattern is contained in a string. Use `filter()` and `grepl()`
+
+* to replace the elements of that pattern with something else. Use `mutate()` and `gsub()`
+
+* to extract a component that matches the patterns. Use `extractMatches()` from the DataComputing package.
+
+To illustrate, consider the baby names data, summarised to give the total count of each name for each sex.
+
+```{r}
+NameList <- BabyNames %>% 
+  mutate( name=tolower(name) ) %>%
+  group_by( name, sex ) %>%
+  summarise( total=sum(count) ) %>%
+  arrange( desc(total)) 
+```
+
+Here are some examples of patterns in names and the use of a regular expression to detect them.  The regular expression is the string in quotes.  `grepl()` is a function that compares a regular expression to a string, returning TRUE if there's a match, FALSE otherwise.
+
+* The name contains "shine", as in "sunshine" or "moonshine"
+    ```{r}
+NameList %>% 
+  filter( grepl( "shine", name ) ) %>% 
+  head()
+```
+
+* The name contains three or more vowels in a row.
+
+```{r}
+NameList %>% 
+  filter( grepl( "[aeiou]{3,}", name ) ) %>% 
+  head()
+```
+
+* The name contains three or more consonants in a row.
+
+```{r}
+NameList %>% 
+  filter( grepl( "[^aeiou]{3,}", name ) ) %>% 
+  head()
+```
+
+* The name contains "mn"
+
+```{r}
+NameList %>% 
+  filter( grepl( "mn", name ) ) %>% 
+  head()
+```
+
+* The first, third, and fifth letters are consonants.
+
+```{r}
+NameList %>% 
+  filter( grepl( "^[^aeiou].[^aeiou].[^aeiou]", name ) ) %>% 
+  head()
+```
+
+
+### Examples of accomplishing tasks with regular expressions.
+
+
+```{r,echo=FALSE, include=FALSE}
+Debt <- data.frame(country=c("World","United States", "Japan"),debt=c("$56,308 billion", "$17,607 billion","$9,872 billion"), percentGDP=c("64%","73.60%","214.30%"))
+
+```
+
+
+#### Get rid of percent signs and commas in numerals
+
+Numbers often come with comma separators or unit symbols such as % or $.  For instance, here is part of a table about public debt from [Wikipedia](http://en.wikipedia.org/wiki/Government_debt).
+
+```{r}
+head(Debt,3)
+```
+
+To use these numbers for computations, they must be cleaned up.
+
+```{r}
+Debt %>% 
+  mutate( debt=gsub("[$,%]|billion","",debt),
+          percentGDP=gsub("[,%]", "", percentGDP)) %>%
+  head(3)
+```
+
+#### Remove a currency sign 
+
+```{r}
+gsub("^\\$|€|¥|£|¢$","", c("$100.95", "45¢"))
+```
+
+#### Remove leading or trailing spaces
+
+```{r}
+gsub( "^ +| +$", "", "   My name is Julia     ")
+```
+
+#### How often do boys' names end in vowels?
+
+```{r}
+NameList %>%
+  filter( grepl( "[aeiou]$", name ) ) %>% 
+  group_by( sex ) %>% 
+  summarise( total=sum(total) )
+```
+
+Girls' names are almost five times as likely to end in vowels as boys' names.
+
+#### What are the most common end vowels for names?
+
+To answer this question, you have to extract the last vowel from the name.  The `extractMatches()` transformation function can do this.  
+
+```{r}
+NameList %>% 
+  extractMatches(data=., "([aeiou])$", name, vowel=1 ) %>%
+  group_by( sex, vowel ) %>% 
+  summarise( total=sum(total) ) %>%
+  arrange( sex, desc(total) )
+```
+
+
+### Reading Regular Expressions
+
+There are simple regular expressions and complicated ones.  All of them look foreign until you learn how to read them.
+
+There are many regular expression tutorials on the Internet, for instance [this interactive one](http://regexone.com/). Here is a useful [cheat sheet](http://krijnhoetmer.nl/stuff/regex/cheat-sheet/)
+
+Some basics:
+
+* Very simple patterns:
+    * A single `.` means "any character."
+    
+    * A character, e.g., `b`, means just that character.
+    
+    * Characters enclosed in square brackets, e.g., `[aeiou]` means any of those characters.  (So, `[aeiou]` is a pattern describing a vowel.) 
+    
+    * The `^` inside square brackets means "any except these."  So, a consonant is `[^aeiou]`
+    
+* Alternatives.  A vertical bar means "either."  For example `(A|a)dam` matches `Adam` and `adam`
+
+* Repeats
+
+     * Two simple patterns in a row, means those patterns consecutively.  Example: `M[aeiou]` means a capital M followed by a lower-case vowel.
+     
+     * A simple pattern followed by a `+` means "one or more times." For example `M(ab)+` means `M` followed by one or more `ab`.  
+     
+     * A simple pattern followed by a `?` means "zero or one time."
+     
+     * A simple pattern followed by a `*` means "zero or more times."
+     
+     * A simple pattern followed by `{2}` means "exactly two times."  Similarly, `{2,5}` means between two and five times, `{6,}` means six times or more.
+     
+* Start and end of strings.  For instance, `[aeiou]{2}` means "exactly two vowels in a row."
+
+    * `^` at the beginning of a regular expression means "the start of the string"
+    
+    * `$` at the end means "the end of the string."
+
+
+
+## Task for you
+
+Indicate which strings contain a match
+![](/Users/Adam/Desktop/stat133lectures_hw_lab/regex.png)
+
+
+Note: you can experiment with `grepl(pattern,x)` for example:
+```{r}
+x <- c("hi mabc","abc","abcd","abccd","abcabcdx","cab","abd","cad")
+grepl("a[b?d]",x)
+```
+
+
+The metacharacters in Regular Expressions are:
+
+`.` `\` `|` `(` `)` `[` `]` `{` `$` `*` `+` `?`
+
+![](/Users/Adam/Desktop/stat133lectures_hw_lab/regex1.png)
+
+
+Example:
+```{r}
+grepl("[a\\.]", c("hello.bye", "adam"))
+```
+
+There are also built-in character sets for commonly used collections.
+
+![](/Users/Adam/Desktop/stat133lectures_hw_lab/regex2.png)
+
+Example:
+
+```{r}
+x <- c ("a0b", "a1b","a12b")
+grepl("a[[:digit:]]b",x)
+```
+
+
+```{r}
+x <- c (3,"a","b","?")
+grepl("[[:digit:]abc]",x)
+```
+
+
+
+## Task for you
+Write a regular expression that matches
+
+1. only the strings "cat","at","t"
+
+```{r,include=show_answers}
+x <- c("cat","at","t","ta","acata")
+grepl("^c?a?t$",x)
+```
+
+
+2. the strings "cat", "caat", "caaat", and so on.
+
+```{r,include=show_answers}
+x <- c("cat","caat","caaat")
+grepl("^ca+t$",x)
+```
+
+
+3. "dog", “Dog”,“dOg”,“doG”,“DOg”, etc. (i.e., the word dog in any combination of upper and lower case)
+```{r,include=show_answers}
+x <- c("dog", "Dog" , "dOg", "doG" , "DOg")
+grepl("(d|D)(o|O)(g|G)",x)
+```
+
+4. any positive number, with or without a decimal point
+
+```{r,include=show_answers}
+x <- c(1, 12.4,-56.899,  0, -23)
+grepl("^-?[0-9]+.?[0-9]*$",x)
+```
+
+
+5. any line with exactly two words separated by any amount of whitespace (spaces or tabs). There may or may not be whitespace at the beginning or end of the line.
+```{r,include=show_answers}
+x <- c("   stat rocks", "I love stats")
+grepl("^[[:blank:]]*[[:alpha:]]+[[:blank:]]+[[:alpha:]]+[[:blank:]]*$",x)
+
+```
+
+
+
+
+## For next time finish reading chapter 16 in book.

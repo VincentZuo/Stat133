@@ -1,0 +1,144 @@
+---
+title: "Hw assignemnt 7"
+author: "Zuo Siqi"
+date: "march 11 2016"
+output: 
+  html_document:
+    fig_height: 3
+    fig_width: 5
+---
+<!-- Don't edit in between this line and the one below -->
+```{r include=FALSE}
+# Don't delete this chunk if you are using the DataComputing package
+library(DataComputing)
+```
+*Source file* 
+```{r, results='asis', echo=FALSE}
+includeSourceDocuments()
+```
+<!-- Don't edit the material above this line -->
+
+```{r}
+Stations <- mosaic::read.file("http://tiny.cc/dcf/DC-Stations.csv")
+data_site <- "http://tiny.cc/dcf/2014-Q4-Trips-History-Data-Small.rds" 
+Trips <- readRDS(gzcon(url(data_site)))
+```
+
+##Time of day##
+
+1 A density plot of the events versus sdate. Your plot should look like:   
+
+```{r, figure.width = 10, figure.height = 10}
+Trips %>% 
+  ggplot(aes(x = sdate)) + 
+  geom_density()
+```
+
+2 A density plot of the events versus time of day. You can use lubridate::hour(), and lubridate::minute() to extract the hour of the day and minute within the hour from sdate, e.g.  
+
+```{r figure.width = 10, figure.height = 10}
+Trips %>% 
+  mutate(time_of_day = lubridate::hour(sdate) + lubridate::minute(sdate) / 60) %>%
+  ggplot(aes(x = time_of_day)) + geom_density()
+```
+
+3 Facet (2) by day of the week. (Use lubridate::wday() to generate day of the week.)   
+
+```{r figure.width = 10, figure.height = 10}
+Trips %>% 
+  mutate(time_of_day = lubridate::hour(sdate) + lubridate::minute(sdate) / 60) %>%
+  mutate(day_of_week = lubridate::wday(sdate)) %>%
+  ggplot(aes(x = time_of_day)) + geom_density() + facet_wrap(~day_of_week)
+```
+
+4 Set the fill aesthetic for geom_density() to the client variable.1 You may also want to set the alpha for transparency and color=NA to suppress the outline of the density function.   
+
+```{r figure.width = 10, figure.height = 10}
+Trips %>% 
+  mutate(time_of_day = lubridate::hour(sdate) + lubridate::minute(sdate) / 60) %>%
+  mutate(day_of_week = lubridate::wday(sdate)) %>%
+  ggplot(aes(x = time_of_day)) + geom_density(aes(fill = client), alpha = 0.4, color = NA) + facet_wrap(~day_of_week)
+```
+
+5 Same as (4) but using geom_density() with the argument position = position_stack(). In your opinion, which of these graphics is most effective at telling an interesting story?   
+```{r figure.width = 10, figure.height = 10}
+Trips %>% 
+  mutate(time_of_day = lubridate::hour(sdate) + lubridate::minute(sdate) / 60) %>%
+  mutate(day_of_week = lubridate::wday(sdate)) %>%
+  ggplot(aes(x = time_of_day)) + geom_density(aes(fill = client), alpha = 0.4, color = NA, position = position_stack()) + facet_wrap(~day_of_week)
+```
+
+The approach in qn5 is clearly better because it removes the shading of one one another, so one can clearly see the superior layer.    
+But it does have some drawbacks, forinstance we lose infomation on the inferior layer.
+
+6 Rather than faceting on day of the week, consider creating a new faceting variable like this:   
+
+```{r figure.width = 10, figure.height = 10}
+Trips %>% 
+  mutate(time_of_day = lubridate::hour(sdate) + lubridate::minute(sdate) / 60) %>%
+  mutate(wday = ifelse(lubridate::wday(sdate) %in% c(1,7), "weekend", "weekday")) %>%
+  ggplot(aes(x = time_of_day)) + geom_density(aes(fill = client), alpha = 0.4, color = NA, position = position_stack()) + facet_wrap(~wday)
+```
+
+it's better to facet on `wday` and fill with `client`. We expect uses in weekends to be higher than weekdays. So the filling with `wday` does not tell us much. Instead, filling with `client`, we do a comparison of the behaviors of 2 different types of users of 2 different customer profiles, thus more infomative
+
+##Trip distance##
+
+1 Make two copies of Stations, which we’ll call Left and Right. Left will have names sstation, lat, and long. Right will have names estation, lat2, and long2. The other variables, nbBikes and nbEmptyDocks should be dropped. Use the function dpylr::rename() to do the renaming of name,lat, and long (i.e. dyplyr::rename(sstation=name)).   
+```{r}
+Left <- Stations %>%
+  select(name, lat, long) %>%
+  rename(sstation = name, lat = lat, long = long)
+
+Right <- Stations %>%
+  select(name, lat, long) %>%
+  rename(estation = name, lat2 = lat, long2 = long)
+```
+
+2 Join Left and Right with a full outer join. This is a join in which every case in Left is matched to every case in Right. You can accomplish the full outer join with left%>% merge(right,all=TRUE).   
+```{r}
+result <- Left %>%
+  merge(Right, all = TRUE)
+```
+
+```{r}
+source("http://tiny.cc/dcf/haversine.R")
+```
+
+3 Using the merged table, add a variable dist like this:
+
+```{r}
+Distances <- result %>%
+  mutate(dist = haversine(lat, long, lat2, long2))
+
+Distances %>%
+  select(sstation,estation ,dist) %>%
+  filter(sstation == "5th & F St NW", estation =="19th & L St NW") %>%
+  head(10)
+
+joined <- Trips %>%
+  inner_join(Distances)
+```
+
+##Distributions of distances##
+
+1 Make a density plot of dist broken down by weekend vs weekday and by client.   
+
+```{r }
+joined %>% 
+  mutate(wday = ifelse(lubridate::wday(sdate) %in% c(1,7), "weekend", "weekday")) %>%
+  ggplot(aes(x = dist)) + geom_density(aes(fill = client), alpha = 0.4, color = NA, position = position_stack()) + facet_grid(client~wday)
+
+```
+
+2 Show the distribution of dist in a compact way with a violin plot or box and whiskers plot.For both geom_violin() and geom_boxplot(), you will want to map the group aesthetic to hour. For geom_boxplot(), you may prefer to set outlier.size = 1. You might also want to add a stat_smooth() layer.
+
+```{r }
+joined_2 <- joined %>% 
+  na.omit() %>%
+  mutate(hour = lubridate::hour(sdate), wday = ifelse(lubridate::wday(sdate) %in% c(1,7), "weekend", "weekday")) 
+
+ggplot(joined_2, aes(x = hour, y = dist)) + geom_violin(aes(group = hour)) + facet_grid(client~wday) + ylim(0, 5)
+ggplot(joined_2, aes(x = hour, y = dist)) + geom_boxplot(aes(group = hour), outlier.size = 1, fill = "gray") + stat_smooth() + facet_grid(client~wday) + ylim(0, 5)
+```
+

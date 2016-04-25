@@ -1,0 +1,189 @@
+---
+title: "Lec9"
+author: ""
+date: ""
+output: 
+  html_document:
+    fig_height: 3
+    fig_width: 5
+---
+<!-- Don't edit in between this line and the one below -->
+```{r include=FALSE}
+# Don't delete this chunk if you are using the DataComputing package
+library(DataComputing)
+```
+*Source file* 
+```{r, results='asis', echo=FALSE}
+includeSourceDocuments()
+```
+<!-- Don't edit the material above this line -->
+
+#Today
+ 
+1. Chapter 10 Joining two data tables
+2. Chapter 8 more ggplot2
+
+#Chapter 10: Joining two Tables
+
+```{r}
+Grades <- read.file("http://tiny.cc/mosaic/grades.csv")
+head(Grades,10)
+```
+
+```{r}
+Courses <- read.file("http://tiny.cc/mosaic/courses.csv")
+head(Courses,10)
+```
+
+###Joins
+A *join* is a data verb that combines two tables.
+
+* These care called the left and the right tables.
+There are several kinds of join.
+
+* All involve establishing a correspondance — a match — between each case in the left table and zero or more cases in the right table.
+* The various joins differ in how they handle multiple matches or missing matches.
+
+###Example: Average class size
+
+####Goal: Figure out the average class size seen by each student.
+
+* enroll comes from Courses table.
+* Student (sid) comes from Grades.
+* sessionID is in both tables.
+
+```{r}
+joined_tables <- Grades %>%
+  select(sid, sessionID) %>%
+  left_join(Courses %>% select(enroll, sessionID), by=c("sessionID"="sessionID"))
+ head(joined_tables, 10) 
+ 
+```
+
+#### Task for you
+Make the following plot of the average class size for each student.
+```{r}
+
+ 
+ avg_class_size <-  joined_tables %>%
+   group_by(sid) %>%
+   summarise(avg=mean(enroll, na.rm=TRUE))
+#head(avg_class_size)
+avg_class_size %>% ggplot(aes(x=sid, y=avg)) + geom_point() + scale_x_discrete(breaks=NULL)
+```
+
+
+Note: To figure out how to remove the tick mark labels (which aren't legible) a good resource is the [Cookbook for R](http://www.cookbook-r.com/Graphs/Axes_(ggplot2)/)
+
+## Most popular joins: 
+
+* left_join() The output has all the cases from the Left, even if there is no match in the right. If there is no match in the right you get NA
+* inner_join() the output has only the cases from the Left with a match in the Right
+
+inner joins are usefull for filtering. For example suppose I want to know the departments where the most students get good grades.
+
+```{r}
+good_grades <- Grades %>% 
+  filter(grade %in% c("A","A-"))
+head(good_grades)
+good_depts <- good_grades %>% 
+  inner_join(Courses) %>% 
+  group_by(dept) %>% 
+  tally(sort=TRUE)
+head(good_depts)
+```
+
+
+# Chap 8 (More ggplot2)
+
+It is important to be able to look up the syntax and aesetics for the different geoms. Here is a good resourse from [ggplot2.org](http://docs.ggplot2.org/current/index.html)
+
+#Example
+
+The data table `Birth78` in MosaicData package gives a day by day record of the number of births in the United States in 1978.
+
+```{r}
+head(Births78)
+```
+
+### Task for you
+Make a new table DailyBirths that gives the average of births on the different days of the week for each month of the year. You will need to use the function lubridate::month(date) which gives you the month from `date`.
+For example:
+```{r}
+head(Births78$date)
+head(month(Births78$date))
+```
+For purposes of clarity later, we will rename wday as Wday using `rename()`:
+```{r}
+myBirths78 <- Births78 %>% rename(Wday=wday)
+head(myBirths78)
+```
+
+1. Make the following plot:
+
+```{r}
+avg_Births <- myBirths78 %>% 
+  mutate(Month=month(date)) %>%
+  group_by(Month,Wday) %>% 
+  summarise(avg=mean(births))
+head(avg_Births)
+plot1 <- avg_Births %>% ggplot(aes(x=Wday,y=avg)) +geom_point(aes(color=as.factor(Month)))
+plot1
+```
+
+2. You can find a data set listing US federal holidays at `http://tiny.cc/dcf/US-Holidays.csv`.  Read it in as follows:^[The point of the `lubridate::dmy()` function is to convert the character-string date stored in the CSV to a POSIX date-number.] 
+
+```{r}
+Holidays <- read.csv("http://tiny.cc/dcf/US-Holidays.csv") %>%
+mutate(date = lubridate::dmy(date))
+```
+Filter out cases that are not in the month of November or December
+```{r}
+my_months=c(11,12)
+myHolidays <- Holidays %>% filter(month(date) %in% my_months , year(date)==1978) 
+```
+
+3.  Add a layer to your plot from (1). Draw a vertical bar at each date which is a holiday in November or January.  You'll use the `geom_vline()` glyph.  You can give a `data = ` argument to `geom_vline()` to tell it to plot out the information from `Holidays` rather than `MyTwoYears`.  
+  
+ 
+```{r}
+plot2 <- avg_Births %>% ggplot(aes(x=Wday, y=avg)) + geom_point(aes(color=Wday)) +geom_vline(data= myHolidays, aes(xintercept=wday(date), color=wday(date,label=TRUE))) 
+
+plot2
+
+```
+ 
+  
+  
+  
+4. Add a text label to each of the vertical bars to identify which holiday it is.  Use the `geom_text()` glyph.^[Hints: You'll have to make up a y-coordinate for each label.  You can set the orientation of each label with the `angle` aesthetic.]    
+```{r}
+plot3 <- plot2 + geom_text(data = myHolidays,
+           aes(x = wday(date), y = 9000, label = holiday, angle = 65))
+plot3
+```
+
+
+
+
+
+
+4. Next your layer your graph with a horizontal line with yintercept equal to the average number of births in for a day in 1978. Make the following plot:
+
+```{r}
+avg <- Births78 %>% summarise(avg=mean(births))
+plot4 <- plot3 + geom_hline(yintercept = avg[1,1])
+plot4
+```
+
+
+5. Use `annotate()` to label the horizontal line as average  
+
+```{r}
+plot4 + annotate("text", label="avg", x="Sun", y=9000)
+```
+
+
+
+
+

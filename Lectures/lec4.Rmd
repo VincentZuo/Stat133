@@ -1,0 +1,169 @@
+---
+title: "lec4 Stat 133"
+author: "Adam Lucas"
+date: "January 26, 2016"
+output: html_document
+---
+```{r, message=FALSE, warning=FALSE, error=FALSE, echo=FALSE}
+library(DataComputing)
+```
+
+
+
+```{r, results='asis'}
+# should include echo=FALSE so this chunck isn't part of report
+includeSourceDocuments("/Users/Adam/Desktop/lec4.Rmd")
+```
+
+Here is a link to the .Rmd of today's lecture
+
+#Chapter 3 R command patterns
+
+
+
+**Replicator and Sequence functions**
+These functions are handy for making sequences of numbers.  
+Seq is a generalization of ":"  
+Seq uses the arguement *by*  
+```{r}
+1:5
+5:1
+seq(0,11, by=2)
+seq(10,0, by=-2)
+```
+```{r}
+
+```
+
+The replicator function uses the argument *times* or *each*  
+```{r}
+rep(c(0,1), times=5)
+rep(letters[1:5],each=2)
+rep(1:3, each =2, times=3)
+```
+
+#Chapter 4 Files and Documents  
+
+### Files on your system 
+
+The file path is the set of successive folders that bring you to the file.
+
+There is a standard format for file paths. An example: `/Users/kaplan/Downloads/0021_001.pdf`. Here the filename is `0021_001`, the filename extension is `.pdf`, and the file itself is in the Downloads folder contained in the kaplan folder, which is in turn contained in the Users folder. The starting / means “on this computer”.
+
+The R `file.choose()` — which should be used only in the console, not an Rmd file — brings up an interactive file browser. You can select a file with the browser. The returned value will be a quoted character string with the path name.
+
+`file.choose()` then select a file. The output is:
+`[1] "/Users/kaplan/Downloads/0021_001.pdf"`
+
+For example I have a `.csv` file on my Desktop called names.csv. If I want to load it into R I might first find the path:
+
+file.choose()  
+`[1] "/Users/Adam/Desktop/names.csv"`
+
+Then to load it I type:  
+```{r}
+my_names <- read.file("/Users/Adam/Desktop/names.csv")
+my_names
+```
+
+Some common filename extensions for the sort of web resources you will be using:
+
+*`.png` for pictures  
+*`.jpg` or `.jpeg` for photographs  
+*`.csv` or `.Rdata` for data files  
+*`.Rmd` for the human editable text of a document (called R Markdown)  
+*`.html` for web pages themselves  
+
+
+
+
+### Writing reproducible reports in R with R Markdown
+It is important that when you do some data cleaning or analysis every command that you use is documented in your report and can be repeated to get your results. This makes your report reproducible. A .Rmd (R Markdown) file makes your report reproducible since it integrates computer commands into the narrative so that graphics are produced by the commands rather than being inserted from another source. 
+
+For example when you make a plot you can include the R commands that made the plot in your report using "chuncks"
+
+```{r, message=FALSE, warning=FALSE, error=FALSE}
+library(DataComputing)
+BabyNames %>%
+  filter(name=="Adam") %>%
+  group_by(year) %>%
+  summarise(total_births=sum(count)) %>%
+  ggplot( aes(x=year, y=total_births)) + geom_line()
+```
+
+This allows the reader to see how you generated the plot and how to modify it.
+
+In lab this week you will learn about making R Markdown files. There is a link to an R-Markdown quick reference pdf in the data camp course you are doing in lab this week.
+
+ **Note: Most .Rmd files will draw on a library that needs to be loaded into the R session.**
+
+When you compile .Rmd -> .html, R starts a brand new session that has no libraries loaded. You don't need to install packages but you need to load libraries into your chunk. Usually you put a chunk at the top of your document with that looks like:
+```{r}
+# you may want ```{r, include=FALSE} so report doesn't show the contents of this chunk in your output file
+library(DataComputing)
+library(mosaic)
+```
+
+### URLs
+
+You have probably noticed URLs in the locator window near the top of your browser.
+A URL includes in its path name the location of the server on which the file is stored (e.g. www.macalester.edu) followed by the path to the file on that surver. Here, the path is /~montgomery and the file is graywolf.html.
+
+You will sometimes need to copy URLs into your work in R, to access a dataset, make a link to some reference, etc. Remember to copy the entire URL, including the http:// part if it is there. For example, to include the jpeg picture of the gray wolf in your own Rmd file, use the following markup, which includes the URL.
+
+`[Gray Wolf](http://www.macalester.edu/~montgomery/GrayWolf.jpg)`  
+
+For example, here is a link to the R Markdown cheat sheat:
+[R Markdown](http://rmarkdown.rstudio.com/authoring_basics.html). You will also see a link to a markdown reference pdf in data camp during this weeks lab.
+
+
+
+
+
+###Embedded Files within HTML files
+
+When you hand in documents for the course, you will almost always be handing in an HTML file. However, it’s very useful to be able to access the original Rmd file from which the HTML was compiled, or perhaps other files such as CSV data. The `Data Computing` package
+provides a way to do this easily. Inside an R chunk in the Rmd file, include the following command:
+
+> includeSourceDocuments("AssignmentTwo.Rmd")
+
+Of course, instead of always specifying `"AssignmentTwo.Rmd"`, give the quoted character string containing the path and filename for your Rmd file. You can construct this easily by using `file.choose()` in the console, and copying the result as the argument of `includeSourceDocuments()` function. This will embed the named file into your HTML, so that the file will be available directly through the HTML file. You need to view the html in your browser to be able to download the .Rmd file.
+
+For example see the top chunk of today's lecture notes.
+
+###Creating an .Rmd file
+
+When doing an assignment, you will be creating an `.Rmd` file, compiling it to `.html`, and then handing in your assignment by uploading the HTML file to b-courses. 
+
+To create a new .Rmd file, open the “File/New File/R Markdown/From Template”. Choose the top “DataComputing Simple” template from the menu. This will open a new document in the RStudio editor. The document will be initialized with some contents. You’ll be adding on to these.
+
+Save the `.Rmd` file in an appropriate place on your system. It’s up to you what you name the file, so long as it ends with the filename extension `.Rmd`. (RStudio will add this extension if you don’t specify one. To avoid mistakes, let RStudio do this work.)
+
+A recommendation: use the assignment number and your last name, e.g. `Assignment-One-Lucas.Rmd. No spaces in the name, please.
+
+Make sure to follow the instructions in the template. As you do your work, edit the .Rmd file that you saved; you don’t need to get another template for that assignment. But you will need to use the template for each assignment.
+
+You will need to turn in your Assignment 3 as an `.html` file. It is completely optional this week.
+
+
+# Reporting with R Markdown (Data Camp)
+
+## Software for R Markdown
+
+1. **RStudio**  
+2. **R**  
+3. **The rmarkdown R package**
+a software package that makes human editable text
+4. **The Kitr R package**  
+a software package that allows you to weave R code in your R markdown text.
+5 ** The Shiny R package**  
+a software package that allows you to make interactive graphs
+7. **pandoc**   
+ a software program that allows you to render .Rmd to different formats including .html, .pdf, and .doc
+8. **Latex**  
+a software package that allows you to format math equations. Necessary to form .pdf files not .html files.
+9. **Microsoft Word**
+10. **A web browser**
+
+
+Kitr, Shiny and Pandoc are all included with Rstudio. You only need to download [latex](http://latex-project.org/ftp.html)

@@ -1,0 +1,204 @@
+---
+title: "Stat 133 Lab 8"
+author: "Zuo Siqi"
+date: "03/10/2016"
+output: 
+  html_document:
+    fig_height: 3
+    fig_width: 5
+---
+<!-- Don't edit in between this line and the one below -->
+```{r include=FALSE}
+# Don't delete this chunk if you are using the DataComputing package
+library(DataComputing)
+```
+*Source file* 
+```{r, results='asis', echo=FALSE}
+includeSourceDocuments()
+```
+<!-- Don't edit the material above this line -->
+
+q1   
+
+```{r}
+# for calculation adopted from the lab
+vec = 1:50
+i = 1
+
+while(i < 50) {
+  vec[i] <- i^2
+  i <- i + 1
+}
+
+# vectorized calculation
+vec_vect <- 1:50
+vec_vect[1:49] = vec_vect[1:49]^2
+
+all.equal(vec, vec_vect)
+
+```
+
+q2  
+   
+part 1   
+contains 0, 2, 4, 6, 8   
+```{r}
+x <- seq(from = 0, to = 8, by = 2)
+x_test <- c(0, 2, 4, 6, 8)
+all.equal(x, x_test)
+```
+    
+part 2
+conatins NA, NA, 4, 6, 8
+```{r}
+x[x < 4] <- NA
+x_test <-c(NA, NA, 4, 6, 8)
+all.equal(x, x_test, num.eq = TRUE, single.NA = TRUE )
+```
+    
+part 3
+contains 0, 0, 0, 0, 0   
+```{r}
+x[] <- 0
+x_test <-c(0, 0, 0, 0, 0)
+all.equal(x, x_test, num.eq = TRUE)
+```
+    
+part 4 
+conatains just 0
+```{r}
+x <- 0
+x_test <- 0
+all.equal(x, x_test, num.eq = TRUE)
+```
+
+q3   
+
+The lapply function input a vector and outputs a list.
+
+q4    
+    
+```{r}
+# Initialization process
+set.seed(1337)
+m <- matrix(runif(15000, -3, 3), ncol = 3)
+
+# use for loop to calculate the squared sum
+m.ssq.loop = vector(mode = 'numeric', length = 5000)
+for (i in 1:5000) {
+  first = m[i, 1]^2
+  sec = m[i, 2]^2
+  thd = m[i, 3]^2
+  m.ssq.loop[i] = first + sec + thd
+}
+```
+
+# use apply function 
+```{r}
+m.ssq.apply <- apply(m, 1, function(x) x[1]^2 + x[2]^2 + x[3]^2)
+identical(m.ssq.loop, m.ssq.apply, num.eq = TRUE)
+```
+
+q5    
+
+```{r}
+# Initialization from the lab
+Year <- c(2000, 2001)
+Algeria <- c(7 ,9)
+Brazil <- c(12, NA)
+Columbia <- c(16, 18)
+
+table1 <- data.frame(Year, Algeria, Brazil, Columbia)
+```
+
+part a
+```{r}
+table2 <- table1 %>%
+  gather(key = Country, value = Value, Algeria, Brazil, Columbia) %>%
+  select(Country, Year, Value) %>%
+  group_by(Country)
+table2
+```
+
+part b
+```{r}
+table3 <- table2 %>%
+  spread(key = Country, value = Value)
+table3$Average <- rowMeans(table3[, -1], na.rm = TRUE)
+table3
+```
+
+q6  
+
+a   
+Points and lines and standard error region   
+
+b   
+x position, y position, line color and point color.   
+
+c   
+x position => educ   
+y position => wage   
+line color => sex
+point color => sex
+   
+d    
+Wage and Educ: quantitative.    
+Sex :qualitative.   
+   
+e   
+title, legends, x and y axies label.   
+   
+f     
+```{r}
+data_to_plot <- CPS85 %>%
+  select(wage, educ, sex) %>%
+  group_by(sex)
+```
+```{r}
+ggplot(data_to_plot, aes(x = educ, y = wage, col = sex)) +geom_point() +ylim(0, 15) + geom_smooth(aes(color = sex), method = "lm", fill = "gray") + ggtitle("Wage vs. Education in CPS85")
+```
+
+q7  
+
+part a    
+```{r}
+SplitChars <- function(string) {
+  ans <- unlist(strsplit(string, ""))
+  return (ans)
+}
+
+my.string <- "ggplot2 is a data visualization package for the statistical programming language R"
+res <- SplitChars(my.string)
+res
+```
+
+part b   
+```{r}
+asRr <- c("a", "s", "R", "r")
+count = 0
+for (i in 1:length(res)) {
+  if (res[i] %in% asRr) {
+    count = count + 1
+  }
+}
+count
+```
+
+part c   
+```{r}
+Reverse <- function(vector) {
+  end = length(vector)
+  start = 1
+  while (start < end) {
+    temp = vector[start]
+    vector[start] = vector[end]
+    vector[end] = temp
+    start = start + 1
+    end = end -1
+  }
+  return (vector)
+}
+
+my.string %>% SplitChars %>% Reverse
+```

@@ -1,0 +1,375 @@
+---
+title: "lec16"
+author: ""
+date: ""
+output: 
+  html_document:
+    fig_height: 3
+    fig_width: 5
+---
+<!-- Don't edit in between this line and the one below -->
+```{r include=FALSE}
+# Don't delete this chunk if you are using the DataComputing package
+library(DataComputing)
+```
+*Source file* 
+```{r, results='asis', echo=FALSE}
+includeSourceDocuments()
+```
+<!-- Don't edit the material above this line -->
+
+# Announcements
+
+### Random Uniform Distribution (hw 6)
+
+In the uniform distribution every number is equally likely.
+To create a vector of 5 numbers from the uniform distribution on the interval 0 to 1 use the code:
+```{r}
+runif(n=5,min=0,max=1)
+```
+
+### homework
+I have added chapter 3 on functions in Data Camp's Intermediate R to your hw 6. Yeah!!
+
+
+#Today
+1. Environments and Variable scope (chapter 3 Functions in Data Camp's Intermediate R)
+2. Passing arguments by value 
+
+# 1.  Environments
+
+R has a special mechanism for allowing you to use the same name in different places in your code and have it refer to different objects.
+
+For example, you want to be able to create new variables in your functions and not worry if there are variables with the same name already in the workspace.
+
+For example:
+```{r}
+w <- 3
+my_func=function(x,y,z){
+  w <- x^2
+  print(w)
+}
+my_func(2,3,4)
+w
+```
+What is happening here is that w in the function `my_func` is a separate copy of the w outside `myfunc`. Because it is a separate copy changing w inside the function doesn't mutate w outside of the function.
+
+To understand this better we need to discuss _environments_.
+
+When you call a function, R creates a new workspace containing just the variables defined by the arguments of that function. This collection of variables is called a _frame_.
+
+We can list the _frame_, using `ls()'
+
+```{r}
+my_func=function(x,y,z){
+  w <- x^2
+  print(ls())
+}
+
+my_func(2,3,4)
+```
+
+
+## Task for you: 
+
+What is the output of the following function call?
+```{r,eval=TRUE}
+x <- 1; y <- 2
+lookatframe <- function(a, b, c) print(ls())  
+
+lookatframe(a = 1, b = 2, c = 3)
+```
+
+
+However, R has a way of accessing variables that are not in the frame created by the function.
+
+```{r}
+x <- 2
+lookatframe <- function(a, b, c){print(ls()); print(x)}
+
+lookatframe(a = 1, b = 2, c = 3)
+
+```
+
+What is happening is that R is looking for variables with that name in a sequence of environments. An _environment_ is just a frame (collection of variables) plus a pointer to the next environment to look in.
+
+In our example, R didn’t find the variable x in the environment defined by the function `lookatframe`, so it went on to the next one. In this case, this was our main workspace, which is called the _Global Environment_.
+
+The “next environment to look in” is called the _parent environment_ or _enclosing environment_.
+
+
+environments: ![](/Users/Adam/Desktop/stat133lectures_hw_lab/Environments.png)
+
+
+The environments form a tree with the empty environment at the bottom. Here is a function that prints the tree of environment names.
+
+```{r}
+tree <- function(env=globalenv()){
+  cat("+ ", environmentName(env), "\n")
+  if(environmentName(env) != environmentName(emptyenv())){  
+    env <- parent.env(env) 
+    Recall(env)
+  }
+invisible(NULL)  # same as result(NULL) but doesn't print
+}
+```
+
+For example 
+```{r}
+tree()
+```
+
+
+
+If R reaches the Global Environment and still can’t find the variable, it looks it looks down the tree.  This is a list of additional environments, which is used for packages of functions and user attached data.
+
+The environment inside of a function is called the _evaluation environment_. 
+
+
+```{r}
+x <- 2
+lookatframe <- function(a, b, c){
+  evaluation_env <-  environment()
+  tree(evaluation_env)
+  }
+
+lookatframe(a = 1, b = 2, c = 3)
+
+
+
+
+```
+
+Note that, the name of the environment `evaluation_env` is not returned by function environmentName() inside of tree(). This happens as the name of an environment is stored into the underlying C function and no assignment or replacement method exist, at the moment, for environments.
+
+
+
+Since the function `lookatframe` is defined in the Global environment, the Global environment is the parent (or _enclosing_ ) environment `lookatframe`. 
+
+In all of our examples the enclosing environment will be the Global environment.
+
+To learn more about environements take CS 61.
+
+
+
+
+
+```{r,include=FALSE}
+env1 <- new.env(parent=baseenv())
+#Again, we can use function tree() to see the effects of the previous statement:
+tree(env1)
+## +   
+## +  base 
+## +  R_EmptyEnv
+```
+
+
+## Task for you
+
+Type the following code into R-studio and see what is the output. Does your result make sense? Discuss with a neighbor.
+
+```{r,eval=TRUE}
+x <- 1
+y <- 2
+pow_two <- function(x){
+  y <- x^2
+  return(y)
+}
+pow_two(4)
+y
+x
+```
+
+Here is another example from lab:
+
+Where is f defined? How does the function g know what f is?
+
+```{r}
+f <- function(n) {
+  if (n %% 2 == 0) {
+    n <- n / 2
+  } else {
+    n <- 3 * n + 1
+  }
+  return(n)
+}
+
+
+g <- function(n) {
+  count <- 0
+  while (n != 1) {
+    n <- f(n)
+    count <- count + 1
+  }
+  return(count)
+}
+
+
+g(6)
+
+
+```
+
+
+
+
+
+
+
+
+We can "attach" a new environment to our tree containing a data table using `attach()`. We actually insert an entry in the environment tree structure in the position given by the pos argument of function attach(). As this parameter defaults to pos=2L, most of the times we attach just underneath the global environment:
+
+```{r}
+attach(mtcars)
+tree()
+```
+
+When loading libraries, function `library()` work on a similar basis and use the same parameter `pos = 2L`
+
+```{r}
+library(MASS)
+tree()
+```
+
+
+
+## How R looks for objects
+
+When R looks for a named object, by default R looks for the name in the current envronment and if a matching name is found, the corresponding value is returned. If the name isn't found it looks in the next environment down the tree.
+
+Hence you can have for example several objects named pi in different environments. 
+
+```{r}
+pi <-  3
+base::pi
+pi
+rm(pi)
+pi
+```
+
+
+# 2. R passes arguements by value
+
+The term _passing a variable_  is used when a function is called with a variable you defined previously. 
+
+For example:
+
+```{r}
+myAge <- 14
+month <- 1
+calculateBirthYear  <-  function(yourAge){
+  2016-yourAge
+}
+
+calculateBirthYear(myAge)
+```
+
+The variable `myAge` is passed to the function `calculateBirthYear`. There are two possibilities how you could have passed the variable myAge to the function. The terms “pass by value” and “pass by reference” are used to describe how variables are passed on. To make it short: pass by value means the actual value is passed on. Pass by reference means a number (called an address) is passed on which defines where the value is stored.
+
+## How Memory Works
+
+To understand how passing variables to functions works it helps to know a little about how objects are stored in the memory of your computer.
+
+To make it simple, lets think of memory as many blocks which are next to each other. Each block has a number (the memory address). If you define a variable in your code, the value of the variable will be stored somewhere in the memory (your operating system will automatically decide where the best storage place is). The illustration below shows a part of some memory. The gray numbers on top of each block show the address of the block in memory, the colored numbers at the bottom show values which are stored in memory.
+
+memory: ![](/Users/Adam/Desktop/stat133lectures_hw_lab/mem1.png)
+
+The variables <span style="color:blue">myAge</span>  and <span style="color:red">month</span> are defined in your code, and they will be stored in memory as shown in the illustration above. As example, the value of `myAge` is stored at the address 106 and the value of `month` is stored at the address 113.
+
+Passing by value means that the value of the function parameter is copied into another location of your memory, and when accessing or modifying the variable within your function, only the copy is accessed/modified and the original value is left untouched. Passing by value is how your values are passed in R.
+
+The following example shows a variable passed by value:
+
+```{r,eval=FALSE}
+myAge <- 14
+calculateBirthYear(myAge)
+```
+
+
+
+memory: ![](/Users/Adam/Desktop/stat133lectures_hw_lab/mem2.png)
+
+As soon as your software starts processing the calculateBirthYear function, the value <span style="color:blue">myAge</span> is copied to somewhere else in your computers memory. To make this more clear, the variable within the function is named <span style="color:pink">age</span> in this example.
+
+
+```{r,eval=FALSE}
+function calculateBirthYear(age){
+  birthYear <- 2016-age
+  birthYear
+}
+```
+
+Everything that is happening now with <span style="color:pink">age</span> does not affect the value of <span style="color:blue">myAge</span> (which is outside of calculateBirthYear‘s function scope) at all.
+
+So how do you modify/update a variable outside of your function? When passing a variable by value, the only way to update the source variable is by using the returning value of the function.
+
+A very simple example:
+
+```{r}
+increaseAge <- function(age) age+1
+
+myAge <- 14
+myAge <- increaseAge(myAge)
+myAge
+```
+
+
+
+
+memory: ![](/Users/Adam/Desktop/stat133lectures_hw_lab/mem3.png)
+
+
+The variable myAge now holds the value 15
+
+_Passing by reference_ means that the memory address of the variable (a pointer to the memory location) is passed to the function. This is unlike passing by value, where the value of a variable is passed on. R and Python pass by Value. The programming language C can pass by value or by reference. 
+
+## Task for you
+
+Discuss with your neighbor how to modify the code below so that the variable a is updated outside the function (.i.e. a outputs 15 not 5)
+```{r}
+triple <- function(x) {
+  x <- 3*x
+  x
+}
+a <- 5
+triple(a)
+a
+```
+
+
+##iclicker
+
+```{r,include=TRUE}
+math_magic <-  function(a,b=1){
+  if(b==0){
+    return(0)
+  }
+  a*b +a/b
+}
+
+math_magic(4,0)
+```
+
+```{r, include=TRUE}
+increment <-  function(x, inc=1) {
+   x <- x+inc
+   x
+}
+ count <- 5
+ count <- increment(count,2)
+ count
+
+```
+
+
+```{r, include=FALSE}
+
+MAD <- function(x,na.rm=FALSE){  #Mean absolute deviation
+ if(na.rm){
+   x=x[!is.na(x)]
+ } 
+  return(median(abs(x-median(x))))
+}
+
+MAD(c(1,2,3,NA))
+```

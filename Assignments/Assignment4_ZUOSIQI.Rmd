@@ -1,0 +1,164 @@
+---
+title: "Holiday Birthdays Assignment -- Asssignment 4"
+author: "Siqi Zuo"
+date: "Feb 16th, 2016"
+output:
+  html_document:
+    fig_height: 3
+    fig_width: 5
+  pdf_document: default
+---
+<!-- Don't edit in between this line and the one below -->
+```{r include=FALSE}
+# Don't delete this chunk if you are using the DataComputing package
+library(DataComputing)
+library(printr)
+```
+*Source file* 
+```{r, results='asis', echo=FALSE}
+includeSourceDocuments()
+```
+<!-- Don't edit the material above this line -->
+
+#################
+1. Plot by dates
+#################
+```{r fig.height= 6, fig.width= 9}
+data("Birthdays", package = "mosaicData")
+DailyBirths <-
+  Birthdays %>%
+  group_by(date) %>%
+  summarise(total = sum(births))
+
+ggplot(DailyBirths, aes(x= date, y = total)) + geom_point()
+```
+We can plot out daily births vs. date in the R Studio.
+
+#################
+2. 
+#################
+load lubridate 
+```{r fig.height= 6, fig.width= 9}
+library(lubridate)
+```
+
+a. every week
+```{r fig.height= 6, fig.width= 9}
+WeeklyBirths <- Birthdays %>%
+  mutate(week = week(date)) %>%
+  group_by(week) %>%
+  summarize(total=sum(births))
+head(WeeklyBirths)
+```
+
+b. every month
+```{r fig.height= 6, fig.width= 9}
+MonthlyBirths <- Birthdays %>%
+  mutate(month = month(date)) %>%
+  group_by(month) %>%
+  summarize(total=sum(births))
+head(MonthlyBirths)
+```
+
+
+c. Julian Day
+```{r fig.height= 6, fig.width= 9}
+JDayBirths <- DailyBirths %>%
+  mutate(Jday = yday(date)) %>%
+  group_by(Jday) %>%
+  summarize(total=sum(total))
+head(JDayBirths)
+```
+
+################
+3
+################
+```{r fig.height= 6, fig.width= 9}
+Weekdays <- Birthdays %>%
+  group_by(wday) %>%
+  summarize(total=sum(births))
+Weekdays
+```
+
+
+################
+4
+################
+```{r fig.height= 6, fig.width= 9}
+MyTwoYears <-
+  Birthdays %>%
+  filter(year(date) == 1980 | year(date) == 1981) %>%
+  group_by(date, wday) %>%
+  summarise(total = sum(births))
+head(MyTwoYears)
+ggplot(MyTwoYears, aes(x= date, y=total, color=wday)) + geom_point()
+```
+
+The trend is pretty evident from the the plot, for both weekday and weekends, the peak takes place from July to October. And relatively same across other months.
+
+
+################
+5.
+################
+```{r fig.height= 6, fig.width= 9}
+Holidays <- read.csv("http://tiny.cc/dcf/US-Holidays.csv") %>%
+  mutate(date = lubridate::dmy(date))
+```
+
+################
+6
+################
+```{r fig.height= 6, fig.width= 9}
+Holidays_filtered <- Holidays %>%
+  filter(year==1980 | year==1981)
+
+MyTwoYears2 <- MyTwoYears %>%
+  left_join(Holidays_filtered, by=c("date"="date")) %>%
+  select(date,holiday,total,wday)
+
+Holidays_joined <- Holidays %>%
+  left_join(MyTwoYears, by=c("date"="date")) %>%
+  select(date, holiday, wday, year)
+head(Holidays_joined)
+
+MyTwoYears2 %>%
+  ggplot(aes(x=date, y=total))+
+  geom_point(aes(col=wday))+
+  geom_text(aes(label=holiday, y=9300,  angle=50),colour="black")+
+  geom_vline(data = Holidays_joined, aes(xintercept = as.numeric(date), col = wday))
+```
+
+###############
+7
+###############
+```{r fig.height= 6, fig.width= 9}
+CombineTable <- 
+  left_join(MyTwoYears, Holidays, by = c("date" = "date"))
+head(CombineTable)
+```
+
+##############
+8.
+##############
+```{r fig.height= 6, fig.width= 9}
+CombinedTable2 <- CombineTable %>%
+  mutate(is_holiday=ifelse(is.na(holiday), "no", "yes"))
+head(CombinedTable2)
+```
+
+##############
+9.
+##############
+```{r fig.height= 6, fig.width= 9}
+ggplot(CombinedTable2, aes(x=date, y=total)) +
+geom_point(aes(color=wday,size = is_holiday)) +
+geom_vline(data=Holidays_filtered, aes(xintercept=as.numeric(date))) +
+geom_text(data= Holidays_filtered, aes(label=holiday, y= 9200, angle=65), color = "black")
+```
+
+Hypothesis is inccorrect, we can see that holidays like President's day and columbus day still follows the pattern in 4.
+
+
+
+
+

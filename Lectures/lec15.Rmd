@@ -1,0 +1,310 @@
+---
+title: "lec15"
+author: ""
+date: ""
+output: 
+  html_document:
+    fig_height: 3
+    fig_width: 5
+---
+<!-- Don't edit in between this line and the one below -->
+```{r include=FALSE}
+# Don't delete this chunk if you are using the DataComputing package
+library(DataComputing)
+```
+*Source file* 
+```{r, results='asis', echo=FALSE}
+includeSourceDocuments()
+```
+<!-- Don't edit the material above this line -->
+
+# Today
+1. Finish loops (chapter 2 in Data Camp's Intermediate R)
+2. Functions (chapter 3 in Data Camp's Intermediate R)
+
+# 1. Loops
+
+Recall the syntax or `for` and `while` loops:
+
+```{r, eval=FALSE}
+
+for ( name in vector ){
+  statement
+}
+
+```
+
+
+```{r,eval=FALSE}
+while (condition){
+  statement
+}
+```
+
+
+# Task for you:
+
+Simulate rolling a die until you get a 4. Create a vector of your rolls.
+
+Hint: roll <- sample(1:6,1) simulates rolling a die.  
+```{r,include=TRUE}
+myrolls <- c()
+roll <- 1000 #some number not 1 through 6
+while(roll != 4){
+  roll <- sample(1:6,1)
+  myrolls=c(myrolls,roll)
+}
+myrolls
+```
+
+
+
+The `break` statement causes a loop to exit.
+Example:
+
+```{r}
+# Pre-defined variables
+rquote <- "R's internals are irrefutably intriguing"
+chars <- strsplit(rquote, split = "")[[1]]
+chars
+```
+Count the number of "r"s (both "r" and "R") that come before the first letter "u"  (both "u" and "U") in the rquote character string. Store the result in a variable rcount.
+
+
+
+```{r}
+
+rcount <- 0
+for (char in chars) {
+  if (char == "u" | char == "U") {
+    break
+  }
+  if (char == "r" | char == "R") {
+    rcount <- rcount + 1
+  }
+}
+
+# Print the resulting rcount variable to the console
+rcount
+
+
+
+
+```
+
+
+The break statement causes a loop to exit. This is particularly useful with while loops, which, if we’re not careful, might loop indefinitely (or until we kill R).
+
+Here is an example:
+```{r}
+# Simulate steps for random walk to cross threshold = 10
+max.iter <- 10000
+x <- 0
+steps <- 0
+mywalk=c()
+while(x < 10){
+  x <- x + sample(c(-1, 1), 1)
+  steps <- steps + 1
+  mywalk=c(mywalk,x)
+  if(steps == max.iter){
+    warning("Maximum iteration reached")
+    break }
+}
+mywalk %>% head(100)
+
+```
+
+# 2. Functions 
+
+Functions are one of the most important constructs in R (and many other languages). They allow you to modularize your code - encapsulating a set of repeatable operations as an individual function call.
+
+
+
+For example I might want to have a function that simulates rolling a die. Analyze this code line by line with a neighbor. 
+
+```{r}
+die_rolling_simulation <- function(n=10){
+  if( !(is.wholenumber(n) & n>0)) { 
+    stop("n must be natural number")}
+  myrolls=c()
+  for(i in 1:n){
+    roll <- sample(1:6,1)
+    myrolls=c(myrolls,roll)
+  }
+  return(myrolls)
+}
+
+die_rolling_simulation(20)
+```
+
+
+For another example, R has a function `var` that computes the unbiased estimate of variance, or `sample` variance, usually denoted $s^2$.  Suppose I need to repeatedly compute the maximum likelihood estimator (MLE) of variance $$\hat{\sigma}^2=\frac{1}{n}\sum_{1}^{n}(x_i-\overline{x})^2=\frac{n-1}{n}s^2$$
+ instead of `s^2`.
+
+```{r}
+myvar <- function(x){
+  if( !(is.vector(x))) { 
+    stop("x must be a vector")}
+    n <- length(x)
+    return((n-1)*var(x)/n)
+}
+myvar(c(1,2,3,4))
+var(c(1,2,3,4))
+```
+
+You should rely heavily on functions rather than having long sets of expressions in R scripts.
+
+Functions have many important advantages:
+
+* They reduce bugs by avoiding having multiple instances of the same functionality.  
+* They reduce time involved in coding by eliminating redundancy.  
+* They make for cleaner and more easily-readable code.  
+
+A basic goal in writing functions is modularity.  
+
+In general, a function should
+
+* be fairly short,
+* be focused and specific in what it does, and
+* be designed so that it can be used in combination with other functions to carry out more complicated operations.
+
+
+## Anatomy of a function
+
+The syntax for writing a function is
+
+`function (arglist) body`
+
+Typically we assign the function to a particular name. 
+
+`myfunc <- function (arglist) body`
+
+The keyword `function` just tells R that you want to create
+a function.
+
+Recall that the arguments to a function are its inputs, which may have default values. For example the arguments of the `substring()` function are:
+
+```{r}
+args(substring)
+```
+
+
+for example:
+
+
+```{r}
+substring("abcdef",2,4)
+```
+
+Here, if we do not explicitly specify `last` when we call substring, it will be assigned the default value of 1e+06, which is very large. (Why do you think this was chosen?)
+
+A few notes on writing the arguments list.
+
+When you’re writing your own function, it’s good practice to put the most important arguments first. Often these will not have default values.
+
+This allows the user of your function to easily specify the
+arguments by position. For example: 
+```{r,eval=FALSE}
+mtcars %>% ggplot(mpg, wt)
+```
+
+
+ rather than 
+ 
+ 
+
+```{r,eval=FALSE}
+ mtcars %>% ggplot(x = mpg, y = wt)
+```
+
+Next we have the _body_ of the function, which typically consists of expressions surrounded by curly brackets. Think of these as performing some operations on the input values given by the arguments.
+
+```{r,eval=FALSE}
+{
+    expression 1  
+    expression 2
+    return(value)
+}
+```
+
+
+The `return` expression hands control back to the caller of the function and returns a given value. If the function
+returns more than one thing, this is done using a named list, for example
+
+```{r}
+stats <- function(x){
+  if( !(is.vector(x))) { 
+    stop("x must be a vector")}
+  return(list(total=sum(x), avg=mean(x)))
+}
+
+stats(c(1,2,3))
+```
+
+In the absence of a `return` expression, a function will return the last evaluated expression. This is particularly common if the function is short.
+For example, I could write the simple function:
+
+```{r}
+sumofsquares <- function(x, y) sum(x^2+y^2)
+
+sumofsquares(2,3)
+```
+
+
+Here I don’t even need brackets {}, since there is only
+one expression.
+
+A `return` expression anywhere in the function will cause the function to return control to the user _immediately_, without evaluating the rest of the function. This is often used in conjunction with `if` statements. For example:
+
+
+```{r}
+normt <- function(n, dist){
+  if ( dist == "normal" ){
+    return( rnorm(n) )
+  } else if (dist == "t"){
+    return(rt(n, df = 1, ncp = 0))
+  } else stop("distribution not implemented")
+}
+normt(10,"t")
+```
+
+# A task for you
+
+Write an R function that will take an input vector and set any negative values in the vector to zero.
+
+```{r,include=TRUE}
+nonneg.vec <- function(x){
+  if( !(is.vector(x))) { 
+    stop("x must be a vector")}
+  ifelse(x>=0, x, 0) 
+}
+nonneg.vec(c(-2,1,3,-5))
+```
+
+##i-clicker 
+
+```{r,include=TRUE}
+myfunc <-  function(fx=function(x){x^2}, plotit=TRUE){
+  xseq=seq(-1, 1, length = 100)
+  yseq=fx(xseq)
+  df <- data.frame(xseq,yseq)
+  p <- df %>% ggplot(aes(x=xseq, y=yseq)) + geom_line(stat="identity", col="red")
+  if(plotit){
+    print(p)
+    }
+}
+
+myfunc(function(x){x}, FALSE)
+```
+
+```{r, include=FALSE}
+MAD <- function(x,na.rm=FALSE){
+ if(na.rm){
+   x=x[!is.na(x)]
+ } 
+  return(median(abs(x-median(x))))
+}
+
+MAD(c(1,2,3,NA))
+```
+

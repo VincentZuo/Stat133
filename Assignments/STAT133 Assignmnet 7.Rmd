@@ -1,0 +1,128 @@
+---
+title: "Bicycle-Use Patterns"
+author: "Siyue Su"
+date: "2016.3.7"
+output: 
+  html_document:
+    fig_height: 7
+    fig_width: 9
+---
+<!-- Don't edit in between this line and the one below -->
+```{r include=FALSE}
+# Don't delete this chunk if you are using the DataComputing package
+library(DataComputing)
+```
+*Source file* 
+```{r, results='asis', echo=FALSE}
+includeSourceDocuments()
+```
+<!-- Don't edit the material above this line -->
+
+
+```{r}
+Stations <- mosaic::read.file("http://tiny.cc/dcf/DC-Stations.csv")
+data_site <- "http://tiny.cc/dcf/2014-Q4-Trips-History-Data-Small.rds" 
+Trips <- readRDS(gzcon(url(data_site)))
+```
+
+# Time of day
+```{r}
+# 1
+# This is a density plot versus sdate with no fill
+Trips %>% 
+  ggplot(aes(x = sdate)) + 
+  geom_density() 
+
+# 2
+# This is a density plot versus the hour time
+Trips %>% 
+  mutate(time_of_day = lubridate::hour(sdate) + lubridate::minute(sdate) / 60) %>%
+  ggplot(aes(x = time_of_day)) + 
+  geom_density()
+
+# 3
+# Facet by day of the week
+Trips %>% 
+  mutate(time_of_day = lubridate::hour(sdate) + lubridate::minute(sdate) / 60, 
+         date = lubridate::wday(sdate, label = TRUE)) %>%
+  ggplot(aes(x = time_of_day)) + 
+  geom_density() +
+  facet_wrap(~date)
+
+# 4
+# Set aesthetics and characters of geom_density
+Trips %>% 
+  mutate(time_of_day = lubridate::hour(sdate) + lubridate::minute(sdate) / 60, 
+         date = lubridate::wday(sdate, label = TRUE)) %>%
+  ggplot(aes(x = time_of_day)) + 
+  geom_density(aes(fill = client), alpha = 0.3, color = NA) +
+  facet_wrap(~date)
+
+# 5
+# Add the argument position
+Trips %>% 
+  mutate(time_of_day = lubridate::hour(sdate) + lubridate::minute(sdate) / 60, 
+         date = lubridate::wday(sdate, label = TRUE)) %>%
+  ggplot(aes(x = time_of_day)) + 
+  geom_density(aes(fill = client), alpha = 0.3, color = NA, position = position_stack()) +
+  facet_wrap(~date)
+
+# 6
+# Change the variable for faceting
+Trips %>% 
+  mutate(time_of_day = lubridate::hour(sdate) + lubridate::minute(sdate) / 60, 
+         wday = ifelse(lubridate::wday(sdate) %in% c(1,7), "weekend", "weekday")) %>%
+  ggplot(aes(x = time_of_day)) + 
+  geom_density(aes(fill = client), alpha = 0.3, color = NA, position = position_stack()) +
+  facet_wrap(~wday)
+```
+Answer of (5): I think the fifth plot with position argument is the most effective. Because it removes the shading of one one another, so one can clearly see the superior layer.    
+But it does have some drawbacks, forinstance we lose infomation on the inferior layer.
+
+Answer of (6): It is better to facet on whether it is weekend since this gives more compacted information.
+
+
+# Trip distance
+```{r}
+Left <- Stations %>% 
+  select(name, lat, long) %>% 
+  rename(sstation = name, lat = lat, long = long)
+head(Left)
+Right <- Stations %>% 
+  select(name, lat, long) %>% 
+  rename(estation = name, lat2 = lat, long2 = long)
+head(Right)
+
+Join <- Left %>% merge(Right,all=TRUE)
+head(Join)
+
+source("http://tiny.cc/dcf/haversine.R")
+
+Distances <- Join %>% mutate(dist = haversine(lat, long, lat2, long2)) %>% 
+  select(sstation, estation, dist)
+head(Distances)
+
+Trips_dist <-  Trips %>% left_join(Distances)
+head(Trips_dist)
+```
+
+# Distributions of distances
+```{r}
+# density plot
+Trips_dist %>% 
+  na.omit() %>%
+  mutate(wday = ifelse(lubridate::wday(sdate) %in% c(1,7), "weekend", "weekday")) %>%
+  ggplot(aes(x = dist)) + geom_density(aes(fill = client), alpha = 0.3, color = NA, position = position_stack()) + facet_grid(client~wday)
+
+# compact way
+Trips_dist %>% 
+  na.omit() %>%
+  mutate(hour = lubridate::hour(sdate), 
+         wday = ifelse(lubridate::wday(sdate) %in% c(1,7), "weekend", "weekday")) %>%
+  ggplot(aes(x = hour, y = dist)) + 
+  geom_boxplot(aes(group=hour), fill = "gray", outlier.size = 1) +
+  facet_grid(client~wday) +
+  stat_smooth() +
+  geom_smooth(fill="gray") +
+  ylim(0,5)
+```

@@ -1,0 +1,94 @@
+---
+title: "Lab 12"
+author: "Zuo Siqi"
+date: ""
+output: 
+  html_document:
+    fig_height: 3
+    fig_width: 5
+---
+<!-- Don't edit in between this line and the one below -->
+```{r include=FALSE}
+# Don't delete this chunk if you are using the DataComputing package
+library(DataComputing)
+```
+*Source file* 
+```{r, results='asis', echo=FALSE}
+includeSourceDocuments()
+```
+<!-- Don't edit the material above this line -->
+
+1.
+```{}
+CarRegistrations %>%
+  filter(grepl("^[38][QO][S8]"), plate) %>%
+  filter(grepl("^931"), zip)
+```
+
+2.
+```{}
+"^s.I..$"
+
+dictionary %>%
+  filter(grepl("grind one\'s teeth"), defintion)
+  
+```
+
+3.
+```{}
+"Get u the bus"
+G from [Gg]
+o from [eo]
+u from [a-zA-Z]
+the from [a|an|the|my]
+bus from [bus|plane]
+
+"Get u the plane"
+G from [Gg]
+o from [eo]
+u from [a-zA-Z]
+the from [a|an|the|my]
+plane from [bus|plane]
+
+"Get u a bus"
+G from [Gg]
+o from [eo]
+u from [a-zA-Z]
+a from [a|an|the|my]
+bus from [bus|plane]
+
+```
+
+7
+```{}
+Number of distinct lines
+```
+
+8
+```{}
+The 3-7 columns of data of any rows containing California key word
+```
+
+9
+```{}
++ : 1 or many
+* : 0 or many
+? : 0 or 1
+```
+
+10
+```{}
+dddsn
+adsm
+dm
+ssn
+dsmn
+```
+
+11
+```{}
+It could potentially remove everything between the first "<" and the last ">"
+```
+
+
+

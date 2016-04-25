@@ -1,0 +1,30 @@
+digraph hw10 {
+
+    nodesep=1.0; // increases the separation between nodes
+//    rankdir = "LR";
+    node [fontname=Courier] //All nodes will this shape and colour
+    edge [color=Blue, fontsize = 40] //All the lines look like this
+
+
+    rt [label = "Root element: Document"]
+    lv1_1 [label = "Element: name"]
+    lv1_2 [label = "Element: description"]
+    lv1_3 [label = "Element: placemark"]
+
+    lv2_1 [label = "Element: Point"]
+    lv2_2 [label = "Text: Earthquakes "]
+    lv2_3 [label = "Text: 6+ Earthquakes, 1966-present"]
+
+    lv3_1 [label = "Element: coordinate"]
+    lv4_1 [label = "Text: -124.9497,41.0352,0 "]
+
+    rt -> {lv1_1, lv1_2, lv1_3}
+
+    lv1_1 -> {lv2_2};
+    lv1_2 -> {lv2_3};
+    lv1_3 -> {lv2_1};
+    lv2_1 -> {lv3_1};
+    lv3_1 -> {lv4_1};
+   
+
+}

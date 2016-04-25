@@ -1,0 +1,190 @@
+---
+title: "Lec8"
+author: "Stat 133"
+date: ""
+output: 
+  html_document:
+    fig_height: 3
+    fig_width: 5
+---
+<!-- Don't edit in between this line and the one below -->
+```{r include=FALSE}
+# Don't delete this chunk if you are using the DataComputing package
+library(DataComputing)
+```
+*Source file* 
+```{r, results='asis', echo=FALSE}
+includeSourceDocuments()
+```
+<!-- Don't edit the material above this line -->
+
+#Today's plan:
+
+1. Review Chapter 7: Wrangling and Data Verbs  
+2. Chapter 8: Graphics and Their Grammars
+
+#Chapter 7: Wrangling and Data Verbs
+
+Last class we learned about the data verbs, arrange(), filter(), select(), mutate(), group_by, and summarise().
+
+A few notes:
+
+1. The function sum() takes a vector and adds up the elements.
+```{r}
+a <- c(1,2,2,2,3)
+sum(a)  # sum of elements of a
+sum(a==2) # number of elements of a that have the value 2
+```
+
+2. Sum is usefull in summarise(). For example suppose you want to display the number of times the name "Adam" and "John" appears in the BabyNames data table.
+```{r}
+BabyNames %>%
+  summarise(Adam_sum= sum(name=="Adam"), John_sum= sum(name == "John"))
+```
+
+3. n() adds up the number of cases. It is usefull inside of summarise(). Lets find the number of boys names in the year 1890
+
+```{r}
+BabyNames %>%
+  filter(year==1890, sex=="M") %>%
+  summarise( total = n())
+```
+
+4. Tally() is another way to add up the number of cases of a data table. 
+```{r}
+BabyNames %>%
+  filter(year==1890, sex=="M") %>%
+  tally()   # tally calls the number of cases n
+```
+It is similar to nrow
+
+```{r}
+BabyNames %>%
+  filter(year==1890, sex=="M") %>%
+  nrow()  
+````
+
+
+###More complex examples of putting together data verbs:
+
+Recall the data table Minneapolis2013 which lists the results of ballots from different wards in different precincts:
+```{r}
+head(Minneapolis2013)
+```
+
+
+Suppose want to order the Precincts according to which has the most number of ballots cast
+```{r}
+Minneapolis2013 %>%
+  group_by(Precinct) %>%
+  summarise(count=n()) %>%     # n() finds how many cases there are
+  arrange(desc(count))
+```
+or
+
+```{r}
+Minneapolis2013 %>%
+  group_by(Precinct) %>%
+  tally(sort=TRUE)  
+```
+
+What if want to order Precincts with the most number of ballots cast having "BETSY HODGES" as First?
+
+```{r}
+Minneapolis2013 %>%
+    filter(First =="BETSY HODGES") %>% 
+    group_by(Precinct) %>%
+    tally(sort=TRUE)
+```
+
+
+
+### Your turn:
+
+1. How many votes are marked "BETSY HODGES" in the First and Second choice selection?
+
+```{r, echo=FALSE,eval=FALSE}
+Minneapolis2013 %>%
+  filter(Second == "BETSY HODGES", First == "BETSY HODGES") %>%
+  tally()   #could also use nrow here
+```
+or
+```{r, echo=FALSE, eval=FALSE}
+Minneapolis2013 %>%
+  group_by(First,Second) %>%
+  tally() %>%
+  filter(First=="BETSY HODGES", Second=="BETSY HODGES")
+```
+
+
+
+2. Here is BabyNames:
+```{r}
+head(BabyNames)
+```
+
+What is the 3 most popular names in BabyNames?
+
+```{r, echo=FALSE, eval=FALSE}
+BabyNames %>%
+  group_by(name) %>%
+  summarise(tot=sum(count)) %>%
+  arrange(desc(tot)) %>%
+  head(3)
+```
+
+
+#Chapter 8: Graphics and their Grammar
+
+ggplot2 is a grpahics package that uses the components of graphs (i.e. glyphs, aestetics, frames, scales, layers) --called the grammar of graphics. 
+
+We call glyphs geoms now.
+
+### examples
+Here is the data table mosaicData::CPS85:
+
+```{r, echo=TRUE}
+frame <- CPS85 %>% ggplot(aes(x=age,y=wage)) 
+frame + geom_point()
+```
+
+
+```{r, echo=TRUE}
+frame <- CPS85 %>% ggplot(aes(x=age,y=wage)) 
+frame + geom_point(aes(shape=sex))
+```
+
+
+```{r, echo=TRUE}
+frame <- CPS85 %>% ggplot(aes(x=age,y=wage)) 
+frame + geom_point(aes(shape=sex)) + facet_grid(married ~ .)
+```
+
+```{r, warning=FALSE, echo=TRUE}
+frame <- CPS85 %>% ggplot(aes(x=age,y=wage)) 
+frame + geom_point(aes(shape=married)) + ylim(0,30)
+```
+
+
+```{r}
+BabyNames %>%
+  group_by(name) %>%
+  summarise(tot=sum(count)) %>%
+  arrange(desc(tot)) %>%
+  head(3)
+```
+
+
+Here is a cheet sheet:
+(Rstudio)[https://www.rstudio.com/wp-content/uploads/2015/03/ggplot2-cheatsheet.pdf]
+
+
+### Your turn
+Please make
+
+```{r, echo=FALSE}
+CPS85 %>% ggplot(aes(x=age,wage)) + geom_point(aes(color=married)) + facet_wrap(~sex)
+```
+
+
+

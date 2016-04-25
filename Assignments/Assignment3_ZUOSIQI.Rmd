@@ -1,0 +1,287 @@
+---
+title: "Assignment3"
+author: "Zuo Siqi"
+date: "Feb/7"
+output: 
+  html_document:
+    fig_height: 3
+    fig_width: 5
+---
+<!-- Don't edit in between this line and the one below -->
+```{r include=FALSE}
+# Don't delete this chunk if you are using the DataComputing package
+library(DataComputing)
+```
+*Source file* 
+```{r, results='asis', echo=FALSE}
+includeSourceDocuments()
+```
+<!-- Don't edit the material above this line -->
+
+
+Delete this sentence and start entering your text here.
+
+Qn 5.4
+Ans:
+```{r}
+ggplot(data=CPS85,aes(x=exper,y=wage))+geom_point()+aes(colour=married)+scale_x_log10()+scale_y_log10()+facet_wrap(~sector,ncol=4) 
+```
+
+Qn 6.3
+1
+Ans:
+
+The bar glyph:
+x: position of protein
+y: position of centre dot
+color : polarity
+label: name of protein
+
+The star glyph:
+x: position of protein
+y: position of high,
+number of stars: significance
+
+2
+Ans:
+x and y define the frame. 
+Y-axis: cell density for center variable. 
+X-axis: different protein (categorical variable)
+
+3
+Ans:
+NO
+
+4
+Ans:
+Tick on y-axis
+Label on bar glyphs
+
+Qn 6.6
+Ans: d
+
+Qn 6.8
+Ans:
+```{r}
+Small <-
+NCHS %>%
+sample_n(size=5000)
+
+ggplot(data=Small,aes(x=bmi,y=weight))+geom_point()+aes(colour=smoker) 
+
+```
+
+x = bmi
+y = weight
+color = smoker
+
+Qn 6.2
+1
+Ans:
+x => Gene (guide is axis with tick marks and labels)
+y => Log enzyme concentration (guide is axis with tick and labels)
+dot-filling : flux (the guide is the filled dot or the unfilled dot)
+dor-color : Molecule (guide is the color key)
+the top horizontal axis: target(guide is 3 lines anf label)
+
+2
+color: molecule
+dot-filling: flux
+x: gene
+y: log enzyme concentration 
+Only 4 in total for the dot
+
+3
+gene and log enzyme concentration
+
+4
+gene and target
+
+Qn 7.2
+Ans:
+1
+verb1: group_by
+verb2: summarise
+args1: color
+args2: avg = mean(carat)
+args3: avg
+
+```{r}
+diamonds %>%
+group_by( color ) %>%
+summarise( avg = mean(carat) ) %>%
+arrange(desc( avg )) %>%
+head( 1 )
+```
+
+2
+verb1: group_by
+verb2: summaries
+args1: clarity
+args2: avg = mean(table/carat)
+args3: avg
+
+```{r}
+diamonds %>%
+group_by( clarity ) %>%
+summarise( avg = mean(table/carat) ) %>%
+arrange(desc( avg )) %>%
+head( 1 )
+```
+
+Qn 7.4
+
+1
+should be group by name instead of first
+
+```{r}
+BabyNames %>%
+  group_by( name ) %>%
+  summarise( votesReceived=n() )
+
+```
+
+2
+This will be an infinite recursive calls 
+The correct code is 
+```{r}
+Tmp <- BabyNames %>%
+  group_by(year, sex ) %>%
+  summarise( totalBirths=sum(count))
+
+  head(Tmp)
+```
+
+3
+Missing %>%
+```{r}
+Tmp <- BabyNames %>%
+  group_by(year, sex) %>%
+  summarise(totalBirths=sum(count) )
+  
+  head (Tmp)
+```
+
+Qn 7.5
+
+(a) arrange(sex, count)
+```{r}
+Tmp <- BabyNames %>%
+  arrange(sex, count)
+  
+  head (Tmp)
+```
+
+(b) filter(sex == "F")
+```{r}
+Tmp <- BabyNames %>%
+  filter(sex == 'F')
+  
+  head (Tmp)
+```
+
+
+(c) filter(sex == "M", count > 10)
+```{r}
+Tmp <- BabyNames %>%
+  filter(sex == 'M', count > 10)
+  
+  head (Tmp)
+```
+
+(d) summarise(total = sum(count))
+```{r}
+Tmp <- BabyNames %>%
+  summarise(total = sum(count))
+  
+  head (Tmp)
+```
+
+(e) select(name, count)
+```{r}
+Tmp <- BabyNames %>%
+  select(name, count)
+  
+  head (Tmp)
+```
+
+Qn 7.6
+1
+ans:
+80101
+```{r}
+  nrow(Minneapolis2013)
+```
+
+2
+ans:
+
+```{r}
+Minneapolis2013 %>%
+    group_by(Second) %>%
+    summarise(total = n()) %>%
+    arrange(desc(total))
+```
+
+3
+ans:
+```{r}
+Minneapolis2013 %>% 
+    filter(First == "undervote") %>% 
+    summarise(count = n())
+```
+
+```{r}
+Minneapolis2013 %>% 
+    filter(Second == "undervote") %>% 
+    summarise(count = n())
+```
+
+```{r}
+Minneapolis2013 %>% 
+    filter(Third == "undervote") %>% 
+    summarise(count = n())
+```
+
+4
+ans:
+```{r}
+Minneapolis2013 %>% 
+    group_by(First, Second) %>% 
+    summarise(total = n()) %>% 
+    arrange(desc(total)) %>%
+    head(3)
+```
+
+5
+ans:
+```{r}
+Minneapolis2013 %>% 
+    group_by(Precinct) %>% 
+    summarise(total = n()) %>% 
+    arrange(desc(total)) %>%
+    head(1)
+```
+
+Qn 8.1
+1) Construct the graphics frame:
+c
+2) Add a layer of glyphs:
+abg
+3) Set an axis label:
+e
+4) Divide the frame into facets:
+fi
+5) Change the scale for the frame:
+dh
+
+Qn 8.2
+1 
+```{r}
+CPS85 %>% ggplot(aes(x = age, y = wage)) + geom_point(aes(shape = married)) + facet_wrap(~ sector) + ylim(0, 30)
+```
+
+2
+```{r}
+CPS85 %>% ggplot(aes(x = age, y = wage)) + geom_point()  + facet_grid( sex ~ married)
+```

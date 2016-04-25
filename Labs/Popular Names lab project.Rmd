@@ -1,0 +1,48 @@
+---
+title: "Popular Names lab project"
+author: "Siqi Zuo"
+date: "13/2/2016"
+output: 
+  html_document:
+    fig_height: 3
+    fig_width: 5
+---
+<!-- Don't edit in between this line and the one below -->
+```{r include=FALSE}
+# Don't delete this chunk if you are using the DataComputing package
+library(DataComputing)
+library(printr)
+```
+
+*Source file* 
+```{r, results='asis', echo=FALSE}
+includeSourceDocuments('Popular Names lab project.Rmd')
+```
+
+<!-- Don't edit the material above this line -->
+```{r, reuslts = 'asis', echo = FALSE, results = "hide"}
+includeSourceDocuments() #embed source code
+```
+
+Obtain a yearly total count
+```{r}
+BabyNames_yearly <- BabyNames %>% group_by(year) %>% summarise( total = sum(count))
+```
+
+Filter the names that I'm interested in
+```{r}
+BabyNames_used <- BabyNames %>% filter(name == "Bonnie" | name == "Vincent" | name == "Alex") %>% group_by(name, year) %>% summarise(sum = sum(count))
+```
+
+Find the percentage of the chosen names over all names 
+```{r}
+BabyNames_join <- BabyNames_used %>% left_join(BabyNames_yearly, by = c("year" = "year"))
+
+BabyNames_plot <- BabyNames_join %>% mutate(popularity = sum/total)
+```
+
+Plot the graph
+```{r}    
+BabyNames_plot %>% ggplot(aes(x = year, y = popularity, group = name)) + geom_line(size = 1, alpha = 0.5, aes(color = name)) + ylab("Popularity") + xlab("Year")
+```
+

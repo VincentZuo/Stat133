@@ -1,0 +1,48 @@
+---
+title: "midterm1 Extra Credit review sheet"
+author: ""
+date: ""
+output: 
+  html_document:
+    fig_height: 3
+    fig_width: 5
+---
+<!-- Don't edit in between this line and the one below -->
+```{r include=FALSE}
+# Don't delete this chunk if you are using the DataComputing package
+library(DataComputing)
+library(printr)
+library(ggthemes)
+```
+*Source file* 
+```{r, results='asis', echo=FALSE}
+includeSourceDocuments()
+```
+<!-- Don't edit the material above this line -->
+
+
+Lecture 19   
+Distributions and Statistics   
+
+Good comparision 
+```{r}
+ggplot( NCHS, aes(x=weight) ) + 
+  geom_density(color="gray", fill="gray", alpha=.75) + 
+  geom_point( alpha=.03, position=position_jitter(height=.002), aes(y=0.002)) + 
+  xlab("Weight (kg)") + ylab( "Density (1/kg)")
+```
+
+Breaking to chunks
+```{r, message=FALSE, warning=FALSE}
+NCHS1 <- NCHS %>% 
+  mutate( ageGroup= ntiles(age, n=6, format="interval") )
+```
+
+```{r}
+NCHS1 %>%
+  ggplot( aes(x=weight, group=ageGroup) ) + 
+  geom_density(aes(color=ageGroup, fill=ageGroup), alpha=.25) + 
+  xlab("Weight (kg)") + ylab( "Density (1/kg)") + 
+  facet_wrap( ~ sex ) + theme(text = element_text(size = 20))
+  
+```

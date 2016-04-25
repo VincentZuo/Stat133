@@ -1,0 +1,96 @@
+---
+title: "Assignment 9 part 1"
+author: "Zuo Siqi"
+date: "2016 April 2nd"
+output: 
+  html_document:
+    fig_height: 3
+    fig_width: 5
+---
+<!-- Don't edit in between this line and the one below -->
+```{r include=FALSE}
+# Don't delete this chunk if you are using the DataComputing package
+library(DataComputing)
+library(rvest)
+library(lubridate)
+page <- "http://en.wikipedia.org/wiki/List_of_nuclear_reactors"
+xpath <- '//*[@id="mw-content-text"]/table' 
+table_list <- page %>%
+  read_html() %>%
+  html_nodes(xpath = xpath) %>%
+  html_table(fill = TRUE)
+```
+*Source file* 
+```{r, results='asis', echo=FALSE}
+includeSourceDocuments()
+```
+<!-- Don't edit the material above this line -->
+# Part 1
+
+```{r}
+table = table_list[[23]]
+new_names <- c("Name", "Reactor_No. ", "type", "Reactor_model", "status", "net", "Gross_Capacity_in_MW", "Constrution_Start_Date", "Commercial_Operation_Date", "Closure")
+names(table) <- new_names # reset the variable names
+table <- table %>% filter(row_number() != 1)
+
+View (table)
+```
+
+```{r}
+new_names <- c("Name", "Reactor_No. ", "Reactor_type", "Reactor_model", "status", "Net_Capacity_in_MW", "Gross_Capacity_in_MW", "Constrution_Start_Date", "Commercial_Operation_Date", "Closure")
+```
+
+```{r}
+names(table) <- new_names 
+table <- table %>% filter(row_number() != 1)
+
+ggplot(table, aes(x = dmy(Constrution_Start_Date), y = Net_Capacity_in_MW, color = Reactor_type)) + 
+  geom_point() + 
+  xlab('construction start') +
+  ylab('net')
+```
+
+```{r}
+tablenew <- table %>% 
+  mutate(var_1 = paste(Name, `Reactor_No. `)) %>%
+  mutate(var_2 = ifelse(grepl("1", var_1), Name, "")) %>%
+  mutate(Constrution_Start_Date = ifelse(Constrution_Start_Date == "", NA, Constrution_Start_Date))
+
+tablenew %>%
+  ggplot(aes(x = dmy(Constrution_Start_Date), y = var_1)) + 
+  geom_segment(aes(xend = dmy(Commercial_Operation_Date), yend = var_1)) + 
+  xlab('construction start') + 
+  ylab('Reactor site') +
+  scale_y_discrete(breaks = tablenew$var_1, labels = tablenew$var_2) 
+```
+
+# Part 2   
+
+mkdir lifespan    
+cd lifespan    
+mv ../Downloads/lifeexpectancy.csv ./    
+mv ../Downloads/makemaps-1.R ./    
+less lifeexpectancy.csv    
+q    
+cut -f 1 -d "," lifeexpectancy.csv | wc -l     
+head -n 1 lifeexpectancy.csv     
+cut -f 1,152,177,202 -d "," lifeexpectancy.csv     
+cut -f 1,152,177,202 -d "," lifeexpectancy.csv | egrep "[0-9]" > lifeexpectancy.clean.csv     
+less lifeexpectancy.clean.csv     
+cat makemaps-1.R    
+R CMD BATCH makemaps-1.R     
+
+#Extra credit
+1    
+x-axis ==> income    
+y-axis ==> lifespan      
+colors ==> Europe, Asia, Middle East, Africa, Americas    
+
+2   
+monthly income for each country in each year    
+
+3    
+predict the trend/convergence, based on existing data    
+
+1 and 3 can be done in R    
+

@@ -1,0 +1,234 @@
+---
+title: "hw assigment 6"
+author: "Zuo Siqi"
+date: "Feb 27 2016"
+output: 
+  html_document:
+    fig_height: 3
+    fig_width: 5
+---
+<!-- Don't edit in between this line and the one below -->
+```{r include=FALSE}
+# Don't delete this chunk if you are using the DataComputing package
+library(DataComputing)
+library(printr)
+```
+*Source file* 
+```{r, results='asis', echo=FALSE}
+includeSourceDocuments()
+```
+<!-- Don't edit the material above this line -->
+
+
+Q1
+```{r}
+leap_yr <- function(x) {
+    if (x %% 400 == 0) {
+      return (TRUE)
+    } else {
+      if (x %% 100 == 0) {
+        return (FALSE)
+      } else if (x%% 4 == 0) {
+        return (TRUE)
+      } else {
+        return (FALSE)
+      }
+    }
+}
+```
+
+```{r}
+for (i in 1992:2016) {
+  if (leap_yr(i)) {
+    print(sprintf("%d is a leap year", i) )
+  } else {
+    print(sprintf("%d is not a leap year", i) )
+  }
+}
+
+```
+So in total 6 leap years
+
+Q2
+
+a
+```{r fig.height= 6, fig.width= 8}
+x_axis = runif(n=100,min=-1,max=1)
+y_axis = runif(n=100,min=-1,max=1)
+coloring =  vector(, 100)
+
+count_pts = 0
+for (i in 1:100) {
+  x_coor = x_axis[i]
+  y_coor = y_axis[i]
+  radius = sqrt(x_coor^2 + y_coor^2)
+  if (radius <= 1) {
+    count_pts = count_pts+1
+    coloring[i] = "blue"
+  } else {
+    coloring[i] = "red"
+  }
+}
+
+prportion = count_pts/100*4
+
+data_pts = data.frame(x_val = x_axis, y_val = y_axis, coloring)
+ggplot(data_pts, aes(x = x_val, y = y_val, color = coloring)) + geom_point()
+
+```
+
+b
+```{r}
+Approximate <- function(size, plotit = FALSE){
+  x_axis = runif(n = size,min=-1,max=1)
+  y_axis = runif(n = size,min=-1,max=1)
+  coloring =  vector(, size)
+  
+  count_pts = 0
+  for (i in 1:size) {
+    x_coor = x_axis[i]
+    y_coor = y_axis[i]
+    radius = sqrt(x_coor^2 + y_coor^2)
+    if (radius <= 1) {
+      count_pts = count_pts+1
+      coloring[i] = "blue"
+    } else {
+      coloring[i] = "red"
+    }
+  }
+  
+  prportion = count_pts/size*4
+  if (plotit){
+      data_pts = data.frame(x_val = x_axis, y_val = y_axis, coloring)
+      ggplot(data_pts, aes(x = x_val, y = y_val, color = coloring)) + geom_point()
+  }
+  return (prportion)  
+}
+
+```
+
+
+c
+```{r}
+E50 <- replicate(100, Approximate(50))
+E50
+
+E500 <- replicate(100, Approximate(500))
+E500
+
+dataf <- data.frame(E50, E500)
+dfff <- dataf %>% gather(key = size, value = area, E50, E500)
+```
+
+d
+```{r}
+histg <- dfff %>% ggplot(aes(area)) + geom_histogram() + 
+        facet_grid(.~size) +
+        geom_vline(xintercept = pi, colour = "red") +
+        labs(title="Circle Area Approx", y = "Number of couts", x="Area")
+histg
+```
+
+3
+a
+```{r}
+fn1 <- function(x) {
+  res = x^3 + 2*x^2 - 7
+  return (res)
+}
+
+dfn1 <- function(x) {
+  res <-3*x^2 + 4*x
+  return (res)
+}
+
+newton_m1 <- function(x0, tol = 0.00001, max_iter = 100000) {
+  update = x0
+  for (i in 1:max_iter) {
+    if (abs(fn1(update) - 0) < tol) {
+      break
+    } else {
+      update = update - (fn1(update)/dfn1(update))
+    }
+  }
+  return (update)
+}
+
+#Test 
+newton_m1(3)
+```
+
+b
+```{r}
+fn <- function(x) {
+  res = x^3 + 2*x^2 - 7
+  return (res)
+}
+
+dfn <- function(x) {
+  res <-3*x^2 + 4*x
+  return (res)
+}
+```
+
+c
+```{r}
+newton_m <- function(x0, f, df, tol = 0.00001, max_iter = 100000) {
+  update = x0
+  for (i in 1:max_iter) {
+    if (abs(f(update) - 0) < tol) {
+      break
+    } else {
+      update = update - (f(update)/df(update))
+    }
+  }
+  return (update)
+}
+
+#Test
+newton_m(3, fn, dfn)
+```
+
+
+d
+```{r fig.height= 6, fig.width= 8}
+newtonM<- function(x0, f, dfn, tol = 0.00001, max_iter = 100000) {
+  
+  xsq <- seq(-5, 5, length = 100)
+  ysq <- sapply(xsq, f)
+  df <- data.frame(xsq, ysq)
+  p <- df %>% 
+    ggplot(aes(x = xsq, y = ysq)) + geom_line()
+  
+  update = x0
+  for (i in 1:max_iter) {
+    if (abs(f(update) - 0) < tol) {
+      break
+    } else {
+      update = update - (f(update)/dfn(update))
+      p <- p+geom_point(x = update, y = f(update), col = "blue", size = 3)
+    }
+  }
+  
+  p <- p + geom_hline(yintercept = 0) 
+  return (p)
+}
+```
+
+```{r fig.height= 6, fig.width= 8}
+#Test
+fn2 <- function(x){
+  res = x^4 + 120*x^3
+  return (res)
+}
+dfn2 <- function(x){
+  res = 4*x^3 + 360*x^2
+  return (res)
+}
+```
+
+```{r}
+newtonM(4, fn2, dfn2)
+```
+
+

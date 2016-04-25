@@ -1,0 +1,1203 @@
+PRIVATE
+---
+title: "midterm1 Extra Credit review sheet"
+author: "Zuo Siqi"
+date: "3/11 2016"
+output: 
+  html_document:
+    fig_height: 3
+    fig_width: 5
+---
+<!-- Don't edit in between this line and the one below -->
+```{r include=FALSE}
+# Don't delete this chunk if you are using the DataComputing package
+library(DataComputing)
+library(printr)
+library(ggthemes)
+```
+*Source file* 
+```{r, results='asis', echo=FALSE}
+includeSourceDocuments()
+```
+<!-- Don't edit the material above this line -->
+
+
+
+
+Lec 4
+
+**Replicator and Sequence functions**
+These functions are handy for making sequences of numbers.  
+Seq is a generalization of ":"  
+Seq uses the arguement *by*  
+```{r}
+1:5
+5:1
+seq(0,11, by=2)
+seq(10,0, by=-2)
+```
+```{r}
+
+```
+
+The replicator function uses the argument *times* or *each*  
+```{r}
+rep(c(0,1), times=5)
+rep(letters[1:5],each=2)
+rep(1:3, each =2, times=3)
+```
+
+lec 7
+
+Volcabulary:
+
+See figure 6.7 page 57  
+
+*Frame*= The space for drawing gyphs. Here a rectangular region set by roadways and gdp.  
+*Glyph*= A symbol or a marking in a frame . There is one glyph for for each case in the data table. Here points.  
+*Aesthetics*= The properties of a glyph. Here x,y, size.  
+_Scales and Guides_= Variables of the data table are *mapped* to aesthetics of the glyph. Here, x=roadways, y= gdp, educ= size  
+*Facets*= Multiple side by side graphs used to display levels of a categorical variable. Here facets are different ranges of Internet connectivity.    
+*Layers*= data from more than one data table are graphed together. Here not layered.  
+
+Rarely is a data table *glyph ready*. We usually need to *wrangle* the data.
+For example say we want to make a bar chart ranking the candidates by how many precincts they are in first place.
+
+```{r}
+#not glyph ready
+head(Minneapolis2013)
+
+FirstPlaceTally <- Minneapolis2013 %>% 
+  rename(candidate=First) %>%
+  group_by(candidate) %>%
+  summarise(total=n()) %>%
+  arrange( desc(total))
+
+#glyph ready
+
+FirstPlaceTally
+
+```
+
+a. Find the average of one of the variables.
+
+b. Add a new column that is the ratio between two variables.
+
+c. Sort the cases in descending order of a variable. 
+
+d. Create a new data table that includes only those cases that meet a criterion.
+
+e. From a data table with several variables produce an output that has the same cases but only the first two variables.
+
+f. From a data table with a categorical variables and a quantitative variable produce a count for the number of cases for each level of the categorical variable. 
+
+
+solution:
+```{r, echo=FALSE}
+mtcars <- mtcars %>%
+  select(mpg, cyl, disp) 
+```
+
+```{r}
+mtcars
+```
+
+
+a.
+```{r}
+mtcars %>% 
+  summarise(avg_count=mean(cyl))
+```
+b.
+```{r}
+mtcars %>% 
+  mutate(ratio=mpg/cyl) %>% 
+  tail()
+ 
+```
+c.
+```{r}
+mtcars %>% 
+  arrange(desc(mpg)) %>%
+  tail()
+```
+d.
+```{r}
+mtcars %>% 
+  filter(mpg >30)
+```
+e.
+
+```{r}
+mtcars %>% 
+  select(mpg, cyl) %>%
+  tail()
+```
+f.
+
+```{r}
+BabyNames %>%
+  group_by(sex) %>%
+  summarise(total=sum(count))
+```
+
+lec 8   
+
+Last class we learned about the data verbs, arrange(), filter(), select(), mutate(), group_by, and summarise().
+
+A few notes:
+
+1. The function sum() takes a vector and adds up the elements.
+```{r}
+a <- c(1,2,2,2,3)
+sum(a)  # sum of elements of a
+sum(a==2) # number of elements of a that have the value 2
+```
+
+2. Sum is usefull in summarise(). For example suppose you want to display the number of times the name "Adam" and "John" appears in the BabyNames data table.
+```{r}
+BabyNames %>%
+  summarise(Adam_sum= sum(name=="Adam"), John_sum= sum(name == "John"))
+```
+
+3. n() adds up the number of cases. It is usefull inside of summarise(). Lets find the number of boys names in the year 1890
+
+```{r}
+BabyNames %>%
+  filter(year==1890, sex=="M") %>%
+  summarise( total = n())
+```
+
+4. Tally() is another way to add up the number of cases of a data table. 
+```{r}
+BabyNames %>%
+  filter(year==1890, sex=="M") %>%
+  tally()   # tally calls the number of cases n
+```
+It is similar to nrow
+
+```{r}
+BabyNames %>%
+  filter(year==1890, sex=="M") %>%
+  nrow()  
+```
+
+lec 10   
+
+#Today
+1. New printr package for making nice tables
+2. More on Joins (Chapter 7)
+3. ggplot from DataCamp's ggplot2 (1) course including wide versus narrow data table format
+
+# 1. printr
+
+Here is a print out of BabyNames rendered using knitr (it looks like the printout at the console):
+
+```{r}
+head(mtcars)
+```
+
+To produce more publication quality tables use the new package printr. It isn't available yet on the CRAN repository so you have to install it by running the following chunk (you neeed to run it not just Knit HTML).
+
+
+```{r, message=FALSE,eval=FALSE}
+install.packages(
+  'printr',
+  type = 'source',
+  repos = c('http://yihui.name/xran', 'http://cran.rstudio.com')
+)
+
+
+```
+Once you install it you will see prinr in your packages list in rstudio. You only have to do this once.
+
+Next you need to remember to put library(printr) in a chunk in your rmarkdown file.
+```{r}
+library(printr)
+```
+
+Here is a print out of mtcars now:
+
+```{r}
+head(mtcars)
+```
+```{r}
+
+```
+
+
+# 2. Joins
+
+Each of the data verbs described until now takes one one data table as an input. Join is different. It's well named: it brings together two data tables. Once you can join two data tables, you can join any number of data tables by repeated joins. Joining is at the heart of combining data from multiple sources.
+
+It's conventional to refer to the two tables as the "left" and "right" tables.
+
+To illustrate the differences and similarities between the different kinds of join, suppose you have these two tables:  
+
+```{r datasetup,echo=FALSE, message=FALSE}
+set.seed(42)
+codes <- sort(round( runif(10,min=10000,max=99999)))
+Left <- data.frame( clinicName=LETTERS[1:9],
+                    postalCode=codes[c(1,2,3,2,4,5,6,6,7)],
+                    y=9:1,x=1)
+Right <- data.frame( postalCode=codes[c(2,1,1,9,8,4)], over65=round(runif(6,0,100))/100,y2=9:4,x2=2)
+Connections <- inner_join( Left, Right ) 
+JustMatches <- semi_join( Left, Right )
+LL <- select( Left, clinicName, postalCode )
+RR <- select( Right, postalCode, over65 )
+```
+
+To illustrate the differences and similarities between the different kinds of join, suppose you have these two tables:
+
+* Left: cases are medical clinics. The variables: `clinicName`, `postalCode`.  Each clinic does multiple procedures. 
+
+```{r,echo=FALSE}
+Left %>% select(clinicName, postalCode )
+```
+
+* Right: cases are postal codes. Variables reflect the demographics of that postal code: `postalCode`, `over65`, etc.
+```{r, echo=FALSE}
+Right %>% select(over65, postalCode  )
+```
+
+
+Variables that appear in both the left and right tables are called "overlap variables."  The only overlap variable here is `postalCode`.
+
+The overlap variables determine which cases will go into the output table.  In this example, there is just one overlap variable: `postalCode`.   
+
+The diagram below shows the cases in the left and right tables.  The lines show the matches between left and right. The cases connected by a match are the overlap cases; there are five of them in the diagram.  Cases without a match also appear in both the left and right tables.
+
+```{r exampleplot,echo=FALSE}
+ggplot() + geom_text(data=Left, 
+                      aes(x=x,y=y,label=postalCode)) +
+           geom_text(data=Left, 
+                      aes(x=x-1,y=y,label=clinicName)) +
+           geom_text(data=Right, 
+                      aes(x=x2,y=y2,label=postalCode)) +
+           geom_text(data=Right, 
+                      aes(x=x2+1,y=y2,label=over65)) + 
+           geom_segment(data=Connections, size=3, alpha=.5, 
+               aes(x=x+.13,y=y,xend=x2-.13,yend=y2)) +
+  theme(
+    plot.background = element_blank()
+   ,panel.grid.major = element_blank()
+   ,panel.grid.minor = element_blank()
+   ,panel.border = element_blank()
+  ) +
+  scale_x_continuous(breaks=NULL,limits=c(-.5,3.5)) +
+  scale_y_discrete(breaks=NULL) + xlab("") + ylab("")
+
+```
+
+
+Note that there are three different kinds of cases here:
+
+1. The matching cases that are in both the left and right. These come as pairs: the cases connected by a line in the diagram.
+2. Non-matching ones in the left.
+3. Non-matching ones in the right.
+
+
+There are different types of join. The type of join specifies whether you want to include in the output the matching cases, the matching pairs, or the non-matching cases.  
+
+#### Inner Join
+
+An *inner join* gives the matching pairs.  Note that clinic A, which had two matches in the right table, appears twice, once for each matching pair in which clinic A is involved.
+
+```{r, message=FALSE}
+LL %>% inner_join(RR, by=c("postalCode"="postalCode"))
+```
+
+#### Outer Join
+
+An *outer join* can include cases where there is no match. You might want to include the unmatched cases from the left table, from the right table, or from both tables. 
+
+##### Unmatched cases from the left table
+
+```{r, message=FALSE}
+LL %>% left_join( RR)
+```
+
+##### Unmatched cases from the right table
+
+```{r, message=FALSE}
+LL %>%  right_join(RR) 
+```
+
+##### Unmatched cases from both tables
+
+```{r, message=FALSE}
+LL %>% full_join(RR)
+```
+
+
+###Task For You:
+
+Here is a left and right data table:
+
+```{r}
+Left <- CountryCentroids %>% select(name, iso_a3) %>% tail()
+Left
+
+Right <-  CountryData %>% select(country,life, infant) %>% tail()
+Right
+
+
+```
+
+Make the following join:
+
+```{r, echo=FALSE, warning=FALSE}
+Left %>% inner_join(Right, by=c("name"="country"))
+```
+
+
+Lecture 11   
+
+#1. The data verb: separate() (not in book)
+
+You can separate one column into multiple columns using the date verb separate()
+
+##Example
+
+ 
+```{r,echo=FALSE}
+iris_narrow <- iris %>%
+  gather(key, Value, -Species) %>%
+  head()
+```
+
+```{r}
+iris_narrow %>% head()
+```
+
+
+
+```{r}
+iris_narrow %>% separate(key, into=c("Part", "Measure"), sep="\\.")
+```
+
+
+### Task for you:
+
+Here is a data frame with a column `x` we wish to split into three columns 
+
+```{r}
+df <- data.frame(x=c("1-2-3", "a-b-c"),  y=c(1,2))
+df
+
+```
+
+Do this using into=c("a","b","c") and sep="-"
+
+
+
+```{r}
+df %>% separate(x,into=c("a","b","c"), sep="-")
+```
+
+
+
+#2. Wide versus Narrow data tables (chapter 11)
+
+A data table can be presented in wide or narrow format. Each have their own advantatges. 
+```{r,echo=FALSE}
+
+
+BP_wide <- data.frame( subject=c("BHO","GWB","WJC"),
+                    before=c(120,115,105),
+                    after=c(160,135,145))
+BP_narrow <- data.frame( subject=c("BHO","GWB","WJC","GWB","WJC","BHO"), when=c("before","before","after","after","before","after"), sbp=c(160,115,145,135,105,160))
+
+```
+Wide format is easier to get the difference of before and after of a test for each patient.
+```{r}
+BP_wide
+
+```
+
+Narrow format is easier to include additional cases  of a patient if they are tested on different days. A narrow format is sometimes called a tidy data table.
+
+```{r}
+BP_narrow
+```
+
+The data verbs 'spread()` and `gather()` convert between these formats.
+
+### `gather()`  transforms *BP_wide* into *BP_narrow*
+
+The *key* variable is the name of the new variable in the narrow format that is *gathered*. 
+
+```{r}
+BP_narrow1 <-  BP_wide %>%
+  gather(key= when, value = sbp, before, after)
+BP_narrow1
+```
+
+
+### `spread()`  transforms *BP_narrow* into *BP_wide*
+
+The *key* variable is the name of the original variable in the narrow format that is *spread*. 
+
+```{r}
+BP_wide1 <-  BP_narrow %>% 
+  spread(key= when, value = sbp)
+BP_wide1
+```
+
+### task for you
+
+Is the following data set narrow or wide? Convert it to the other data table format.
+
+```{r}
+Baby_narrow <- BabyNames %>% 
+  filter(name == "Sue") %>%
+  group_by(name,sex) %>%
+  summarise(total=sum(count))
+Baby_wide <- Baby_narrow %>% spread(key=sex, value= total )
+Baby_wide 
+```
+
+
+```{r}
+Baby_wide %>% gather(key=sex, value=value, F, M)
+```
+
+Note that a narrow table is tidy as we defined in the first day of class. There are no column names as there are in the wide format.
+
+
+### example
+
+Lets examine the wide iris data table:
+
+```{r}
+head(iris)
+```
+
+Suppose you want to make the following plot:
+
+
+```{r, echo=FALSE}
+iris.tidy <- iris %>%
+  gather(key, Value, -Species) %>%
+  separate(key, c("Part", "Measure"), "\\.") 
+
+ggplot(iris.tidy, aes(x = Species, y = Value, col = Part)) +
+  geom_jitter() +
+  facet_grid(. ~ Measure)
+```
+
+The data table `iris` isn't gyph ready. Here is the glyph ready table:
+
+```{r,echo=FALSE}
+iris.tidy <- iris %>%
+  gather(key, Value, -Species) %>%
+  separate(key, c("Part", "Measure"), "\\.") 
+iris.tidy %>% head()
+  
+  
+```
+
+
+*step 1:* Use gather
+
+```{r}
+iris_narrow <- iris %>%
+  gather(key, Value, -Species) %>%  #here -Species means all columns except Species
+  head()
+iris_narrow %>% head()
+```
+
+*step 2:* Use the data verb separate()
+
+```{r}
+iris_narrow_sep <- iris_narrow %>% separate(key, into=c("Part", "Measure"), sep="\\.")
+head(iris_narrow_sep)
+```
+
+
+
+# 3. Aesthetics versus fixed attributes
+
+Aesthetics are properties of the graph that we map to a variable.  
+(example col=`sex` in the `BabyNames` data set)  
+Attribute are properties of the graph that we set equal to a fixed value.  
+(example col="red")
+
+
+Note: attributes don't have a legend since since it takes only a fixed value.
+
+Lecture 12   
+
+## motivating example
+
+Consider the following simple scatterplot using the mpg data:
+
+```{r}
+mpg %>% ggplot( aes(x = cty, y = hwy, color = factor(cyl))) +
+  geom_jitter() +
+  labs(
+    x = "City mileage/gallon",
+    y = "Highway mileage/gallon",
+    color = "Cylinders"
+  )
+```
+
+Suppose we want to make the following modifications to this plot:
+
+* change the default colors in the display  
+* increase the font size of the axis labels  
+* remove the minor grid lines on both axes  
+* add a plot title  
+* move the legend inside the graphics region  
+* change the background color of the graphics region  
+
+
+The first of these depends on the data itself, so we can use one of the `scale_colour_*()` functions for that purpose ---see [ggplot2 help](http://docs.ggplot2.org/current/).
+
+The others influence the rendering of the graphic but are independent of the data being plotted. These are called theme elements, i.e., aspects of a ggplot object that are capable of modifying its appearance but are neither directly related to data nor aesthetics associated with data.
+
+```{r,eval=TRUE}
+theme_grey()
+```
+
+The output of this call lists the properties of a ggplot object that can be accessed by users along with their default values, expressed as a list of lists. The theme() function allows you to locally modify properties of theme elements in a ggplot object.
+
+One way of implementing the desired changes listed above is as follows:
+
+```{r,echo=TRUE}
+p <- mpg %>% ggplot( aes(x = cty, y = hwy, colour = factor(cyl))) +
+  geom_jitter() +
+  labs(
+    x = "City mileage/gallon",
+    y = "Highway mileage/gallon",
+    colour = "Cylinders"
+  ) +
+  scale_colour_brewer(type = "seq", palette = "Oranges")
+
+# Use theme() to modify theme elements
+p + labs(title = "Highway vs. city mileage per gallon") +
+  theme(
+    axis.text = element_text(size = 14),
+    plot.title = element_text(size=12),
+    legend.key = element_rect(fill = "navy"),
+    legend.background = element_rect(fill = "white"),
+    legend.position = c(0.14, 0.80),
+    panel.grid.major = element_line(colour = "grey40"),
+    panel.grid.minor = element_blank(),
+    panel.background = element_rect(fill = "navy")
+  )
+```
+
+The `element_xx()` functions modify theme elements with attributes (e.g., color, text size). Some theme elements are defined in terms of a unit of measurement, while others, such as legend.position, control the positioning of a theme element. These will be illustrated in greater detail in the examples to follow.
+
+In the above call, `element_text()` modifies the size property of the `axis.text` theme element, `element_rect()` changes the fill color of the `legend.key`, `legend.background` and `panel.background` theme elements, `element_line()` alters the color of the major grid lines in both directions and `element_blank()` removes the minor grid lines from the display in both directions. Finally, the form of the `legend.position()` call moves the center of the legend grob to a position in coordinates relative to the size of the overall graphics device (not the graphics panel that delimits the graph itself). In this case, the default theme function is `theme_grey()`, so `theme()` locally changes the above settings in `theme_grey()` to the values specified in the call.
+
+#Task for you:
+
+Copy the previous chunk and make modifications to produce the following plot:
+
+
+```{r,echo=TRUE}
+p <- mpg %>% ggplot( aes(x = cty, y = hwy, colour = factor(cyl))) +
+  geom_jitter() +
+  labs(
+    x = "City mileage/gallon",
+    y = "Highway mileage/gallon",
+    colour = "Cylinders"
+  ) +
+  scale_colour_brewer(type = "seq", palette = "Oranges")
+
+# Use theme() to modify theme elements
+p + labs(title = "Highway vs. city mileage per gallon") +
+  theme(
+    axis.text = element_text(size = 20),
+    plot.title = element_text(size = 20,color = "red"),
+    legend.key = element_rect(fill = "black"),
+    legend.background = element_rect(fill = "white"),
+    legend.position = c(.9,.5),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.background = element_rect(fill = "grey40")
+  )
+```
+
+
+
+The default theme for *ggplot2* graphics is `theme_grey()`, but you can override it with another (complete) theme function. A second theme function built into the system is `theme_bw()`, which can be plugged in as a replacement for `theme_grey()` as follows:
+
+```{r}
+p + labs(title = "Highway vs. city mileage per gallon") +
+  theme_bw() +
+  theme(axis.text = element_text(size = 14),
+    legend.key = element_rect(fill = "navy"),
+    legend.background = element_rect(fill = "white"),
+    legend.position = c(0.14, 0.80),
+    panel.grid.major = element_line(colour = "grey40"),
+    panel.grid.minor = element_blank()
+  )
+```
+
+
+Adding `theme_bw()` to the ggplot() call means that `theme_bw` becomes the default theme for the created ggplot object. The call `theme_bw()` produces a theme object which can be modified with `theme()`.
+
+## Theme element functions
+
+Most theme elements have several properties that can be modified through a corresponding element function.
+
+* `element_text()`  
+* `element_line()`  
+* `element_rect()` 
+* `element_blank()`
+
+### `element_text()`
+
+Purpose: To control the drawing of labels and headings.
+
+The table below lists the arguments of element_text() and their corresponding default values.
+```{r,echo=TRUE}
+data.frame(  Argument=c("family", "face", "colour","size","hjust","vjust","angle", "lineheight"), Description=c("font family","font face", "font color", "font size", "horizontal justification", "vertical justification", "text angle", "line height"), Default=c("“”", "plain","black", "10","0.5","0.5","0","1.1"))
+```
+
+### `element_line()`
+
+Purpose: To draw lines and segments such as graphics region boundaries, axis tick marks and grid lines.
+
+```{r,echo=TRUE}
+data.frame( Arument=c("colour","size","linetype"),Description=c("line color","line thinkness","type of line"), Default=c("black",0.5,1))
+```
+
+
+### `element_rect()`
+
+Purpose: To draw rectangles. It is mostly used for background elements and legend keys.
+
+```{r,echo=TRUE}
+data.frame(Arguement=c("fill","colour","size","linetype"),Description=c("fill color","border color","thinkness of border line", "type of border line"), Default=c("none", "black",0.5,  1))
+```
+
+### `echo_blank()`
+
+Purpose: To draw nothing.
+
+Arguments: none.
+
+The element_blank() function can be applied to any theme element controlled by a theme element function.
+
+
+#Task for you:
+
+Here are some theme elements for you to modify using the element functions above
+
+* axis.text =element_text(...)   
+* panel.background= element_rect(...)  
+* panel.grid =elememnt_line( ...)  
+* axis.ticks= element_blank()  
+
+here is a complete list: [ggplot-themes](http://docs.ggplot2.org/current/theme.html)
+```{r}
+set.seed(123)
+
+df <- diamonds[sample(1:nrow(diamonds), size = 1000),]
+
+df %>% ggplot(aes(carat, price)) + 
+  geom_point() + 
+  theme(axis.ticks = element_line(size = 10))
+
+```
+
+```{r,include=TRUE}
+set.seed(123)
+
+df <- diamonds[sample(1:nrow(diamonds), size = 1000),]
+
+df %>% ggplot(aes(carat, price)) + 
+  geom_point() + 
+  theme(axis.ticks = element_blank(), axis.text =element_text(size=20), panel.background= element_rect(fill = "blue"), panel.grid =element_line(linetype=2)  )
+
+```
+
+## Theme Elements
+
+The default theme function `theme_grey()` contains 38 individual theme elements. The first three of these are `line`, `rect` and `text`, whose default properties are defined through their respective theme element functions `element_line()`, `element_rect()` and `element_text()`. 
+
+
+## Inheritance of Theme Elements
+
+The first three elements in  [ggplot-themes](http://docs.ggplot2.org/current/theme.html) are
+`text`, `line` and `rect`, which, not coincidentally, are the same as the names of the basic theme element functions. Other theme elements inherit the values of these theme elements. For example, the theme elements `axis.text`, `legend.text`, `strip.text` and `axis.title` all inherit from text, while `axis.text.x` and `axis.text.y` further inherit from `axis.text`. This means the values of the components of the theme element text are passed on to axis.text as well as other elements that inherit from text or its children. You can override the default values of one or more theme elements by calling `theme()` and modifying the desired properties of theme elements therein.
+
+Here is a useful figure:
+
+Here is an example:
+
+```{r,include=TRUE}
+set.seed(123)
+
+df <- diamonds[sample(1:nrow(diamonds), size = 1000),]
+
+df %>% ggplot(aes(carat, price)) + 
+  geom_point() + 
+  theme(axis.ticks = element_blank(), text =element_text(size=30), panel.background= element_rect(fill= "blue"), panel.grid =element_line(linetype=2)  )
+
+```
+
+
+##Theme functions
+
+A theme function is an R function in ggplot2 that sets or parameterizes a collection of theme elements. Although the default themes in ggplot2 produce attractive graphics, they may not necessarily correspond with user requirements. If you find yourself modifying the same theme elements repeatedly with `theme()` or need to adapt a set of theme elements to conform to the requirements of a journal or other publication, then you should consider writing your own theme function.
+
+The purpose of a theme function is to either specify default settings for each theme element or modify the settings of an existing theme function to produce a new theme. For example, the foundational `theme_grey` function specifies default settings of each theme element, whereas `theme_bw` is a modification of `theme_grey`.
+
+There are nice theme functions made by other users:
+```{r}
+library(ggthemes)
+mpg %>% ggplot( aes(x = cty, y = hwy, color = factor(cyl))) +
+  geom_jitter() +
+  labs(
+    x = "City mileage/gallon",
+    y = "Highway mileage/gallon",
+    color = "Cylinders"
+  ) + theme_igray()
+
+```
+
+### Saving themes
+
+If you want all your figures to use a certain theme here is how to do it.
+
+
+Say my old default theme is `theme_grey()`
+I have written my own theme called `theme_pink` that I would like to use in all of my plots.
+
+
+```{r}
+theme_pink <- theme(panel.background = element_blank(),
+                    legend.key = element_blank(),
+                    legend.background = element_blank(),
+                    strip.background = element_blank(),
+                    plot.background = element_rect(fill = "red", color = "black", size = 3),
+                    panel.grid = element_blank(),
+                    axis.line = element_line(color = "black"),
+                    axis.ticks = element_line(color = "black"),
+                    strip.text = element_text(size = 16, color = "red"),
+                    axis.title.y = element_text(color = "red", hjust = 0, face = "italic"),
+                    axis.title.x = element_text(color = "red", hjust = 0, face = "italic"),
+                    axis.text = element_text(color = "black"),
+                    legend.position = "none")
+
+
+mpg %>% ggplot( aes(x = cty, y = hwy, color = factor(cyl))) +
+  geom_jitter() +
+  labs(
+    x = "City mileage/gallon",
+    y = "Highway mileage/gallon",
+    color = "Cylinders"
+  ) + theme_pink
+
+
+```
+
+You can make this your default theme using `theme_update()`. The value of the this function is your old theme which you can save: `old <- theme_update()`
+
+```{r}
+old=theme_update(panel.background = element_blank(),
+                    legend.key = element_blank(),
+                    legend.background = element_blank(),
+                    strip.background = element_blank(),
+                    plot.background = element_rect(fill = "red", color = "black", size = 3),
+                    panel.grid = element_blank(),
+                    axis.line = element_line(color = "black"),
+                    axis.ticks = element_line(color = "black"),
+                    strip.text = element_text(size = 16, color = "red"),
+                    axis.title.y = element_text(color = "red", hjust = 0, face = "italic"),
+                    axis.title.x = element_text(color = "red", hjust = 0, face = "italic"),
+                    axis.text = element_text(color = "black"),
+                    legend.position = "none")
+
+
+set.seed(123)
+
+df <- diamonds[sample(1:nrow(diamonds), size = 1000),]
+
+df %>% ggplot(aes(carat, price)) + 
+  geom_point() + 
+  theme(axis.ticks = element_line(size = 10))
+```
+
+You can restore your old theme
+
+```{r}
+theme_set(old)
+set.seed(123)
+
+df <- diamonds[sample(1:nrow(diamonds), size = 1000),]
+
+df %>% ggplot(aes(carat, price)) + 
+  geom_point() + 
+  theme(axis.ticks = element_line(size = 10))
+```
+
+## Colors in R
+
+Here is a list of [colors](http://www.stat.columbia.edu/~tzheng/files/Rcolor.pdf)
+
+### hexidecimal color code
+
+Colors can specified as a hexadecimal RGB triplet, such as "#0066CC". The first two digits are the level of red, the next two green, and the last two blue. The value for each ranges from 00 to FF in hexadecimal (base-16) notation, which is equivalent to 0 and 255 in base-10. For example, in the table below, “#FFFFFF” is white and “#990000” is a deep red.
+
+
+
+lecture 17   
+# 1. Advanced Looping --- `lapply()` and `sapply()` (chapter 4 Data Camp's Intermediate R)
+
+## Motivation 
+
+Here is a function to convert fahrenheit to celsius
+
+```{r}
+to_celsius <- function(x) {
+  (x-32)*5/9
+}
+```
+
+The function `to_celsius` happens to be a vectorized function:
+
+```{r}
+to_celsius(c(32, 40, 50, 60, 70))
+```
+
+Here is another example of a vectorized function:
+
+```{r}
+square_me <- function(vec) vec^2
+square_me(c(1,2,3))
+```
+
+What happens in this situation?
+
+```{r,eval=FALSE}
+# trying to_celsius() on a list
+to_celsius(list(32, 40, 50, 60, 70))
+```
+Outputs: Error in x - 32 : non-numeric argument to binary operator
+
+
+`to_celsius()` does not work with a list.
+
+One solution is to use a for loop:
+
+```{r}
+temps_farhrenheit <- list(c(32, 40, 50, 60, 70))
+temps_celsius=c()
+
+for(temp in temps_farhrenheit){
+  temps_celsius <- c(temps_celsius,to_celsius(temp))
+}
+temps_celsius
+```
+
+R provides a set of functions to “vectorize” functions over
+the elements of lists. 
+
+1. `lapply()`
+2. `sapply()`
+3. `vapply()`
+
+These functions allow us to avoid writing loops and creates faster more readable code.
+
+The simplest apply function is lapply()
+
+## lapply()
+
+lapply() stands for list apply.
+It takes a list or vector and a function as inputs and returns a list. 
+
+example:
+
+Suppose we want to know the class of the elements of the following list.
+
+```{r}
+nyc <-  list(pop = 8404837, boroughs =c ("Manhattan", "Bronx", "Brooklyn", "Queens", "Staten Island"), capital = FALSE)
+```
+
+Instead of writing a for loop to do this you can use `lapply()`
+
+```{r}
+nyc %>% lapply(class)
+```
+
+
+The output of lapply is a list. 
+
+
+example:
+
+```{r}
+players <- list(
+warriors = c('kurry', 'iguodala', 'thompson', 'green'),
+cavaliers = c('james', 'shumpert', 'thompson'),
+rockets = c('harden', 'howard')
+)
+
+players %>% lapply(length)
+
+
+```
+
+It applies the function to length() each element of the list. The output is another list.
+
+## Task for you
+
+
+
+ Here is a list of three vectors of numbers from the normal distribution.
+```{r}
+mylist <- list(rnorm(3), rnorm(3), rnorm(5))
+mylist
+```
+
+Find the minimum of each element in mylist.
+
+
+```{r}
+#using lapply
+
+min_list <- mylist %>% lapply(min) %>% unlist()   #unlist() converts a list to a vector
+min_list  
+```
+
+
+What about functions that take more than one argument?
+
+`paste()` concatenates elements of a vector connecting them with the value of the arguement `collapse`
+
+
+```{r}
+paste(c("stat", 133, "go"), collapse= "-")
+```
+
+after the function argument in lapply we put the extra arguements of the functions.
+
+```{r}
+players %>% lapply(paste, collapse = '-')
+```
+
+
+You can use your own functions in `lapply()`
+
+```{r}
+num_chars <- function(x) {
+nchar(x)
+}
+lapply(players, num_chars)
+```
+
+
+```{r}
+num_chars1 <- function(x,y) {
+nchar(x) + y
+}
+players %>% lapply( num_chars1, 3)
+```
+
+You can define a function with no name (an "anonymous" function)
+
+```{r}
+1:3 %>% lapply(function(x) x^2)
+```
+
+another example:
+
+the `passte()` function connects the string "mr" with each of the Warrior player's last name.
+
+```{r}
+paste("mr",c('kurry', 'iguodala', 'thompson', 'green'))
+```
+
+
+To apply `paste()` to the list of players:
+
+```{r}
+players %>% lapply( function(x) paste("mr",x))
+```
+
+
+## Task for you
+
+```{r}
+nchar(c("adam","jim"))
+```
+
+
+Use lapply to add two to the number of characters in each of player's name in `players`
+```{r}
+players %>% lapply(function(x) nchar(x) +2) 
+```
+
+
+Remember that a data.frame and a matrix is internally stored as a list.
+
+```{r}
+df <- data.frame(
+  name = c('Luke', 'Leia', 'R2-D2', 'C-3PO'),
+  gender = c('male', 'female', 'male', 'male'),
+  height = c(1.72, 1.50, 0.96, 1.67),
+  weight = c(77, 49, 32, 75)
+)
+
+df %>% lapply(class)
+```
+
+
+
+
+## sapply
+
+
+`sapply()` is a modified version of `lapply()`.
+
+`sapply() stands for simplified apply and will output the result as an array if possilbe.
+
+
+
+```{r}
+1:3 %>% sapply(function(x) x^2)
+```
+
+Here we output a 1 dimensional array (i.e. a vector)
+Notice this is the same as
+
+```{r}
+1:3 %>% lapply(function(x) x^2) %>% unlist()
+```
+
+We have seen examples where the list output by `lapply()` have elements that are vectors of different size. It isn't possible to coerce this to be an array since all the rows of an array must be the same size. However, if the output of lapply() has vectors of equal length, we can display our results as an array.
+`
+
+for example:
+
+```{r}
+first_and_last <- function(name){
+    name <-  gsub(" ","",name)
+    letters <-  strsplit(name,split = "")[[1]]
+    c(first=min(letters), last=max(letters))
+}
+ 
+first_and_last("New York") 
+```
+
+
+now lets apply this function to the following vector of cities.
+
+```{r}
+cities <- c("New York", "Paris", "London", "Tokyo", "Rio de Janeiro", "Cape Town")
+
+cities %>% sapply(first_and_last)
+```
+
+
+
+Lecture 19   
+Distributions and Statistics   
+
+Good comparision 
+```{r}
+ggplot( NCHS, aes(x=weight) ) + 
+  geom_density(color="gray", fill="gray", alpha=.75) + 
+  geom_point( alpha=.03, position=position_jitter(height=.002), aes(y=0.002)) + 
+  xlab("Weight (kg)") + ylab( "Density (1/kg)")
+```
+
+Breaking to chunks
+```{r, message=FALSE, warning=FALSE}
+NCHS1 <- NCHS %>% 
+  mutate( ageGroup= ntiles(age, n=6, format="interval") )
+```
+
+```{r}
+NCHS1 %>%
+  ggplot( aes(x=weight, group=ageGroup) ) + 
+  geom_density(aes(color=ageGroup, fill=ageGroup), alpha=.25) + 
+  xlab("Weight (kg)") + ylab( "Density (1/kg)") + 
+  facet_wrap( ~ sex ) + theme(text = element_text(size = 20))
+  
+```
+
+
+The *violin* glyph provides a similar ease of comparison to the box-and-whisker glyph, but shows more detail in the density. 
+
+```{r, message=FALSE, warning=FALSE}
+NCHS1 %>%
+  ggplot( aes(y=weight, x=ageGroup) ) + 
+  geom_violin( aes(color=ageGroup, fill=ageGroup), 
+    alpha=.25) + 
+  ylab("Weight (kg)") + xlab( "Age Group (yrs)") + 
+  facet_wrap( ~ sex )
+```
+
+Both the box-and-whisker and violin glyphs use ink very efficiently.  This allows you to show other data.  For instance, here's the same box-and-whisker plot, but with people with diabetics shown in red.
+
+```{r, message=FALSE, warning=FALSE}
+Diabetics <-
+  NCHS1 %>% filter( diabetic=="Diabetic" )
+```
+```{r}
+Nondiabetics <-
+  NCHS1 %>% filter( diabetic=="Not" )
+```
+```{r}
+Nondiabetics %>%
+  ggplot( aes(y=weight, x=ageGroup) ) + 
+  geom_boxplot(
+    aes(color=ageGroup, fill=ageGroup), 
+    alpha=.25, outlier.size=1, outlier.colour="gray") + 
+  ylab("Weight (kg)") + xlab( "Age Group (yrs)") + 
+  geom_boxplot( data=Diabetics, width=.3,color='red',
+                outlier.colour="lightpink",alpha=.2)
+```
+
+Maybe this is a better graph?
+
+
+```{r, message=FALSE, warning=FALSE}
+NCHS1 %>%
+  ggplot(aes(y=weight, x=ageGroup)) + 
+    geom_boxplot(aes(fill=diabetic), position = position_dodge(width = 0.8),outlier.size = 1, outlier.colour = "gray", alpha=.75) + 
+    facet_grid(.~sex) + 
+    ylab("Weight (kg)") + 
+    xlab("Age Group (yrs)")
+```
+
+A box-and-whiskers glyph can show the confidence interval of the median by means of a "notch". There is a 95% chance that the notch contains the true wage median. Overlap between the notches in two boxes indicates that the evidence for a difference is weak.
+
+
+```{r}
+CPS85 %>%
+  ggplot(aes(x=sex,y=wage)) + geom_boxplot(aes( fill=sex), notch = TRUE)
+```
+
+```{r }
+NCHS1 %>%
+  ggplot(aes(y=weight, x=ageGroup)) + geom_boxplot(aes(fill=diabetic), notch=TRUE, position = position_dodge(width = 0.8),outlier.size = 1, outlier.colour = "gray", alpha=.75) + facet_grid(.~sex) + ylab("Weight (kg)") + xlab("Age Group (yrs)")
+```
+
+You can see all these things by plotting out the individual cases in another graphical layer.
+
+```{r}
+NCHS %>% 
+  ggplot( aes(x=age, y=weight, color=diabetic ) ) +
+  stat_smooth( ) +
+  geom_point( data=Diabetics, color="red", alpha=.2) 
+```
+
+There are only a handful of cases with age less than 20, and hardly any with age less than 10: that's why the confidence interval for diabetics is wide there.  On the other hand, there are lots of cases for age greater than 60.
+
+This sort of function, called a "smoother", is able to bend with the data.  A much more commonly used function --- the "linear" function --- is utterly stiff; it can't bend at all.  You can construct this sort of function from the data with `method=lm` as an argument to `stat_smooth()`.
+
+```{r}
+NCHS %>% 
+  ggplot( aes(x=age, y=weight, color=diabetic ) ) +
+  stat_smooth( method=lm ) +
+  geom_point( data=Diabetics, color="red", alpha=.2) 
+```
+

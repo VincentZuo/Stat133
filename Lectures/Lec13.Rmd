@@ -1,0 +1,142 @@
+---
+title: "Lec13"
+author: "stat 133"
+date: ""
+output: 
+  html_document:
+    fig_height: 3
+    fig_width: 5
+---
+<!-- Don't edit in between this line and the one below -->
+```{r include=FALSE}
+# Don't delete this chunk if you are using the DataComputing package
+library(DataComputing)
+```
+*Source file* 
+```{r, results='asis', echo=FALSE}
+includeSourceDocuments()
+```
+<!-- Don't edit the material above this line -->
+
+
+#Today  
+1. simple linear regression  
+2. locally linear weighted regression (loess)
+
+
+
+`geom_smooth` (or equivalently `stat_smooth`) adds a smoothed conditional mean
+
+see [ggplot2 help](http://docs.ggplot2.org/current/)
+
+There are different methods:
+
+## 1. Linear Model (simple linear regression)
+
+We have two continuous normal variables X and Y.  For example in the mtcars data table, X=wt and Y=mpg. Intuitively the regression line is the best fitting line through your data.
+
+```{r}
+mtcars %>% ggplot(aes(x=wt, y=mpg)) +geom_point() +geom_smooth(method="lm",se=FALSE)
+```
+
+Many scientists misuse the regression line so it is important to know more about it:
+
+In a linear regression model you assume that the average value of y for a given value of x is given by the relationship $$M(x)=\beta_0 + \beta_1x.$$ M(x) is the mean values of all the y in your scatter plot in a narrow strip around x. Only Tyche, the Greek goddess of fortune, knows what $\beta_0$ and $\beta_1$ are.
+
+This is called a _parametric_ model because the relationship between $M(x)$ and x is given by an equation with two parameters $\beta_0$ and $\beta_1$. 
+
+The error of the regression line in estimating $y_i$ from $x_i$ is called the residual and is
+
+$$y_i-(\beta_0 +\beta_1x_i)$$. 
+
+Here is a picture of all of the residuals in a scatter plot.
+
+residuals: ![](/Users/Adam/Desktop/residual.png)
+
+
+
+Thinking of $$ \sum_{i=1}^{n}(y_i-\beta_0 -\beta_1x_i)^2. $$ as a function of $\beta_0$ and $\beta_1$ we can use calculus to find the value, $\widehat{\beta_0}$ and $\widehat{\beta_1}$, that minimizes $$ \sum_{i=1}^{n}(y_i-\beta_0 -\beta_1x_i)^2. $$
+
+The regression line based on my sample is given by $$\widehat{M}(x)=\widehat{\beta_0} + \widehat{\beta_1}x.$$  \widehat{\beta_0} and \widehat{\beta_1} are random variables here since you will get a different value with every sample you take. Again, only Tyche knows what the true parameters, $\beta_0$ and $beta_1$ are.
+
+It turns out that $$\widehat{\beta_1} = Cov(x_i,y_i)/Var(x_i) $$ and
+$$ \widehat{\beta_0}=\overline{y} -\widehat{\beta_1}\overline{x} $$ where $\overline{x}$ and $\overline{y}$ are your sample averages.
+
+For example
+
+```{r}
+lm(formula = mpg ~ wt, data = mtcars)
+```
+
+so $\beta_0=37.3$ is your y intercept   
+and $\beta_1=-5.3$ is your slope
+
+Let $x_0$ be an arbitrary data point (for example $x_0=3$ is a car with weight 3000 pounds in the mtcars dataset). $\widehat{M}(x_0)$ is then an estimate of the height of the regression line at $x_0$ (i.e the avergage mpg of a car with weight 3000 pounds). 
+
+We have,  $$\widehat{M}(x_0)=\widehat{\beta_0} +\widehat{\beta_1}x_0$$
+$$\widehat{M}(x_0)=(\overline{y}-\widehat{\beta_1}\overline{x}) + \widehat{\beta_1}x_0$$
+$$\widehat{M}(x_0)=\overline{y} + \widehat{\beta_1}(x_0-\overline{x})$$
+
+From here using the property (Var(A+B)=Var(A)+Var(B) if A and B are independent random variables) and the amazing fact that $\overline{y}$ and $\widehat{\beta_1}$ are independent random variables) you can show that 
+
+$$Var(\widehat{M}(x_0))=\frac{\sigma^2}{n} + \frac{(x_0-\overline{x})^2\sigma^2}{\sum_{i=1}^{n}(x_i-\overline{x})^2}.$$
+
+What we see from this is that the variance of the height of the regression line varies with $x_0$ and that it gets larger the further away $x_0$ is from $\overline{x}$. This is why the confidence band gets largers the further you are away from the point of averages $(\overline{x},\overline{y})$
+
+For example:
+
+```{r}
+mtcars %>% ggplot(aes(x=wt, y=mpg)) +geom_point() +geom_smooth(method="lm") + geom_point(aes(x=mean(wt),y=mean(mpg)),size=5)
+mtcars$wt %>% mean()
+mtcars$mpg %>% mean()
+```
+
+## 2. Loess (Locally weighted linear Regression)
+
+We have two continuous variables X and Y.  For example in the mtcars data table, X=wt and Y=mpg.
+
+```{r}
+mtcars %>% ggplot(aes(x=wt, y=mpg)) +geom_point() +geom_smooth(se=FALSE)
+```
+
+*Algorithm for Loess*
+
+Let $x_0$ be an observation. For example $x_0=3.435$ corresponding to the 3435 pound Merc 280.
+
+
+1. We gather a fraction (`span`) of the $x_i$ closest to $x_0$.  
+For example if `span=.4` of 32 cars, then we look for the 13 closest car weights to the Merc 280. 
+
+```{r,echo=FALSE}
+mtcars %>% mutate(new=(wt>3 & wt <3.8)) %>% ggplot( aes(x=wt, y=mpg)) +geom_point(aes(col=new),size=3) + geom_vline(xintercept =3.435) 
+
+
+```
+
+2. We assign a weight $K_{i0}=K(x_i,x_0)$ to each point in this neighborhoood, so that the point furthest from the $x_0$ has weight zero, and the closest has the highest weight.
+
+In this example cars nearest to the Merc 280 have a weight close to 1 and blue cars further away have smaller weights. All the red cars have zero weights.
+
+3. Just as we did for simple linear regression find  $\widehat{\beta_0}$ and $\widehat{\beta_1}$ that minimize
+$$ \sum_{i=1}^{n} K_{i0}(y_i-\beta_0 -\beta_1x_i)^2. $$ The difference here is that we have weights % K_{i0}$.
+
+4. The fitted value of $x_0$ is given by $$\widehat{M}(x_0)=\widehat{\beta_0} + \widehat{\beta_1}x_0$$
+
+```{r,echo=FALSE}
+mtcars %>% mutate(new=(wt>3 & wt <3.8)) %>% filter(new==TRUE) %>% ggplot( aes(x=wt, y=mpg)) +geom_point(col="darkturquoise",size=3) + geom_vline(xintercept =3.435) +geom_smooth(method="lm",se=FALSE)
+
+
+```
+
+We do this for every observation $x_0$ in our dataset and connect the points $\widehat{M}(x_0)$. How we connect the points is a little complicated and I won't go into it. What is important is to understand that if the `span` is close to zero then the accuracy of the regression line will be limitted only for a very small range. Hence at every observation there will be an adjustment in the direction of the line resulting in a wiggly curve. If the span is close to 1 then the regression line will be true for a large range and the curve will be almost straight.
+
+```{r}
+mtcars %>% ggplot(aes(x=wt, y=mpg)) +geom_point() +stat_smooth(se=FALSE,method="loess", span=.4)
+```
+
+
+```{r}
+mtcars %>% ggplot(aes(x=wt, y=mpg)) +geom_point() +stat_smooth(se=FALSE,method="loess", span=.8)
+```
+
+The Loess method is _non parametric_ meaning that we are entirely relaxing the linearity assumption.

@@ -1,0 +1,39 @@
+---
+title: "lab Assignment 5"
+author: "Zuo Siqi"
+date: "2016 Feb 21"
+output: 
+  html_document:
+    fig_height: 3
+    fig_width: 5
+---
+<!-- Don't edit in between this line and the one below -->
+```{r include=FALSE}
+# Don't delete this chunk if you are using the DataComputing package
+library(DataComputing)
+```
+*Source file* 
+```{r, results='asis', echo=FALSE}
+includeSourceDocuments()
+```
+<!-- Don't edit the material above this line -->
+
+
+```{r fig.height= 6, fig.width= 9}
+
+set.seed(995)
+
+df <- diamonds[sample(1:nrow(diamonds), size = 1000),]
+
+ggplot(df, aes(carat, price)) + 
+  geom_point(size = 4) + 
+  facet_wrap(~cut, ncol = 3) +
+  geom_smooth(method=loess, aes(fill = cut, col = cut)) + 
+  labs(title = "Diamonds", x = "Carat", y = "Price") +
+  theme(plot.title = element_text(size = 45, colour = "blue"),  
+      axis.title.x = element_text(size = 18, colour = "red"),  
+      axis.title.y = element_text(size = 18, colour = "red"),
+      axis.text.x = element_text(size = 10), 
+      axis.text.y = element_text(size = 10, color = "red"))
+
+```

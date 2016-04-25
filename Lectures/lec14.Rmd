@@ -1,0 +1,399 @@
+---
+title: "Lec14"
+author: "Stat 133"
+date: ""
+output: 
+  html_document:
+    fig_height: 3
+    fig_width: 5
+---
+<!-- Don't edit in between this line and the one below -->
+```{r include=FALSE}
+# Don't delete this chunk if you are using the DataComputing package
+library(DataComputing)
+```
+*Source file* 
+```{r, results='asis', echo=FALSE}
+includeSourceDocuments()
+```
+<!-- Don't edit the material above this line -->
+
+#Midterm
+
+The **Midterm** will cover data wrangling and ggplot (I expect chapters 1-14 excluding chapter 13 and the relavent covered material on data camp) and the first 4 chapters of Intermediate R in Data Camp. It will consist of a 50 min written test. You will be able to use a cheat sheet for syntax. I will provide you with sample problems  and a detailed description of the topics soon.
+
+
+#Today (Programming in R)
+
+1. Conditionals and Control Flow (Chapter 1 Data Camp's Intermediate R)  
+2. Loops (Chapter 2 Data Camp's Intermediate R)  
+
+# 1. Conditionals and Control Flow
+
+
+
+Computing in R consists of sequentially evaluating statements. _Flow control_ structures allow us to control which statements are evaluated and in what order.
+In R the primary ones consist of
+
+* if/else statements and the ifelse function  
+* for and while loops
+
+Expressions, such as `p <- .5` and `sample(c(1, 0), size = 1, prob = c(p, 1-p))` can be grouped together using curly braces “{” and “}”. A group of expressions is called a block. For today’s lecture, the word _statement_ will refer to either a single expression or a block.
+
+The basic syntax for an `if/else` statement is
+
+```{r, eval=FALSE}
+if ( condition ) {
+  statement1
+} else {
+  statement2
+}
+```
+
+You can also write this on a single line as:
+```{r, eval=FALSE}
+if(condition) statement1 else statement2
+```
+
+
+First, `condition` is evaluated. If the first element of the result is `TRUE` then statement1 is evaluated. If the first element of the result is `FALSE` then statement2 is evaluated. Only the first element of the result is used. If the result is numeric, 0 is treated as FALSE and any other number as TRUE. If the result is not logical or numeric, or if it is NA, you will get an error.
+
+For example, 
+```{r}
+a <- c(3==2,5==5,0)
+a
+if(a){
+  print("hi")
+} else{
+  print("bye")
+}
+```
+
+However, 
+```{r,eval=FALSE}
+if("pizza"){
+  print("hi")
+} else{
+  print("bye")
+}
+```
+this will result in an error `Error in if ("pizza") { : argument is not interpretable as logical`
+
+When we discussed Boolean algebra before, we met the operators & (AND) and | (OR).
+
+Recall that these are both vectorized operators. For example:
+
+```{r}
+x <- c(.2,3.3,.4)
+(x < -1 | x > 1)
+```
+
+If/else statements, on the other hand, are based on a single,“global” condition. So we often see constructions using `any` or `all` to express something related to the whole vector, like
+```{r}
+
+if(any(x<-1|x>1)) print("hi") else print("bye")
+
+if(all(x < -1|x > 1)) print("hi") else print("bye")
+```
+
+The result of an if/else statement can be assigned. For example, these give the same result:
+
+```{r}
+x <- c(.2,3.3,.4)
+
+y <- if ( any(x <= 0) ) log(1+x) else log(x)
+y
+
+if ( any(x <= 0) ) y <- log(1+x) else y <- log(x)
+y
+
+```
+
+Also,the else clause is optional. Another way to do the above is:
+
+```{r}
+if( any(x <= 0) ) x <- 1+x
+y <- log(x)
+y
+```
+However this changes x as well.
+
+
+If/else statements can be nested.
+
+```{r,eval=FALSE}
+if (condition1 )
+  statement1
+else if (condition2)
+  statement2
+else if (condition3)
+  statement3
+else
+  statement4
+
+```
+
+
+The conditions are evaluated, in order, until one evaluates to `TRUE`. The the associated statement/block is evaluated. The statement in the final else clause is evaluated if none of the conditions evaluates to `TRUE`.
+
+
+
+A note about formatting if/else statements:
+
+
+When the if statement is not in a block, the `else` (if present) must appear on the same line as `statement1` or immediately following the closing brace. For example,
+
+
+```{r, eval=FALSE}
+if (condition) {statement1}
+else {statement2}
+```
+
+will be an error. For example 
+
+```{r, eval=FALSE}
+if(3==2){ print("hi")}
+else {print("bye")}
+```
+
+gives an error `Error: unexpected 'else' in "else"`
+
+I suggest using the format
+
+```{r, eval=FALSE}
+if (condition) {
+  statement1
+} else {
+  statement2
+}
+```
+
+## Some common uses of if/else clauses
+
+1. With logical arguments to tell a function what to do
+
+```{r}
+corplot <-  function(x,y,plotit=TRUE){
+  df=data.frame(var1=x,var2=y)
+  p <-  df %>% ggplot(aes(x=var1,y=var2)) + geom_point(size=3) +theme(text=element_text(size=25))
+  if(plotit) print(p)
+  cor(x,y)
+}
+
+corplot(runif(n=100,min=0,max=1),runif(n=100,min=0,max=1))
+```
+
+2. To verify that the arguments of a function are as expected
+
+```{r}
+m=matrix(c(1,2,3,4),nrow=2)
+if( !is.matrix(m)){
+  stop("m must be a matrix")
+} else{
+  print("hi")
+}
+
+
+```
+but 
+```{r,eval=FALSE}
+m=c(1,2,3)
+if( !is.matrix(m)){
+  stop("m must be a matrix")
+  print("hi")
+}
+```
+will throw an error `Error: m must be a matrix`
+
+
+3. To handle common numerical errors
+
+```{r}
+y <- 3
+x <- 0
+ratio <- if(x!=0) y/x else NA
+ratio
+```
+
+4. In general, to control which block of code is executed
+
+```{r}
+normt <- function(n, dist){
+  if ( dist == "normal" ){
+    return( rnorm(n) )
+  } else if (dist == "t"){
+    return(rt(n, df = 1, ncp = 0))
+  } else stop("distribution not implemented")
+}
+normt(10,"t")
+```
+
+These if/else constructions are useful for global tests, not tests applied to individual elements of a vector.
+
+However, there is a vectorized function called `ifelse`
+
+
+```{r}
+args(ifelse)
+```
+
+Here `test` is an R object that can be coerced to logical. `yes` and `no` are R objects of the same size as test
+
+```{r}
+y=2
+x=c(-1,0,2)
+x!=0
+y/x
+NA
+ifelse(x!=0, y/x,NA)
+```
+
+For each element of `test`, the corresponding element of `yes` is returned if the element is `TRUE`, and the corresponding element of `no` is returned if it is `FALSE`.
+
+# Task for you
+
+The modulo operator in R is %%. For example
+```{r}
+15 %% 2
+15 %% 3
+```
+
+Assign true to the boolean variable leapYear if the integer variable year is a
+leap year. The rule for determining leap years is that one of the following conditions must hold:
+1) the year is divisible by 4 but not divisible by 100, or 
+2) the year is divisible by 400.
+
+
+```{r,include=FALSE}
+year <- 2013
+if((year%%4==0 & year%%100 != 0) | (year%% 400 ==0)  ) {leapyear <- TRUE
+}else{
+  leapyear <- FALSE
+}
+leapyear
+```
+
+```{r,include=TRUE}
+year <-  2016
+if((year%%4==0 & year%%100 != 0) | (year%% 400 ==0)  ) leapyear <- TRUE  else leapyear <- FALSE
+leapyear
+```
+
+Can you do this if year is a vector 2000:2016?
+```{r,include=TRUE}
+year <- 2000:2016
+leapyear <- ifelse((year%%4 & year%%100 !=0) | (year%% 400 ==0), TRUE,FALSE)
+leapyear
+```
+
+# 2. Loops
+
+Looping is the repeated evaluation of a statement or block of statements.
+
+Much of what is handled using loops in other languages can be more efficiently handled in R using vectorized calculations or one of the `apply` mechanisms.
+
+However, certain algorithms, such as those requiring recursion, can only be handled by loops.
+
+There are two main looping constructs in R: `for` and `while`.
+
+## for loops
+
+A for loop repeats a statement or block of statements a predefined number of times.
+
+The syntax in R is
+```{r, eval=FALSE}
+
+for ( name in vector ){
+  statement
+}
+
+```
+
+For each element in `vector`, the variable `name` is set to the
+value of that element and `statement` is evaluated.
+
+vector often contains integers, but can be any valid type.
+
+Examples:
+```{r}
+for( word in c("my","name","is","adam")){
+  print(word)
+}
+```
+
+
+or 
+
+```{r}
+xseq <- seq(-2.5, 2.5, length = 100) 
+yseq <- xseq^2
+df <- data.frame(xseq,yseq) 
+p <- df %>% ggplot(aes(x=xseq, y=yseq)) + geom_line(stat="identity", col="red")
+
+for(i in -2:2){
+ p <- p + geom_point(x=i,y=2,col="blue",size=3)
+}
+p
+
+```
+
+## while loops
+
+A while loop repeats a statement or block of statements
+for as many times as a particular condition is `TRUE`.
+
+The syntax in R is
+
+```{r,eval=FALSE}
+while (condition){
+  statement
+}
+```
+
+`condition` is evaluated, and if it is `TRUE`, statement is evaluated. This process continues until condition evaluates to `FALSE`.
+
+# Task for you
+
+The expression,
+
+```{r,eval=FALSE}
+sample(c(1, 0), size = 1, prob = c(p, 1-p))
+```
+
+simulates a random coin flip, where the coin has probability p of coming up heads, represented by a 1.
+For p=.5 simulate flipping a coin until 20 of heads are obtained. Produce the vector of 0 and 1.
+
+
+```{r, include=TRUE}
+p=.5
+count=0
+flips=c()
+while(count<20){
+  flip= sample(c(1, 0), size = 1, prob = c(p, 1-p))
+  flips=c(flips,flip)
+  count=count + flip
+}
+flips
+```
+
+The break statement causes a loop to exit. This is particularly useful with while loops, which, if we’re not careful, might loop indefinitely (or until we kill R).
+
+Here is an example:
+```{r}
+# Simulate steps for random walk to cross threshold = 10
+max.iter <- 10000
+x <- 0
+steps <- 0
+mywalk=c()
+while(x < 10){
+  x <- x + sample(c(-1, 1), 1)
+  steps <- steps + 1
+  mywalk=c(mywalk,x)
+  if(steps == max.iter){
+    warning("Maximum iteration reached")
+    break }
+}
+mywalk %>% head(100)
+```
+
+

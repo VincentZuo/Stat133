@@ -1,0 +1,175 @@
+---
+title: "lec22"
+author: ""
+date: ""
+output: 
+  html_document:
+    fig_height: 3
+    fig_width: 5
+---
+<!-- Don't edit in between this line and the one below -->
+```{r include=FALSE}
+# Don't delete this chunk if you are using the DataComputing package
+library(DataComputing)
+```
+*Source file* 
+```{r, results='asis', echo=FALSE}
+includeSourceDocuments()
+```
+<!-- Don't edit the material above this line -->
+
+```{r, echo=FALSE}
+show_answers <- FALSE
+knitr::opts_chunk$set(tidy=FALSE, message=FALSE)
+
+```
+
+#Today
+1. Finish regular expressions (chapter 16)
+2. Time for questions about midterm review
+
+# Regular expressions 
+
+Here again is a useful [cheat sheet](http://krijnhoetmer.nl/stuff/regex/cheat-sheet/)
+
+## Tasks for you
+
+Write a regular expression that matches
+
+1. Any positive or negative number (ex -56.899)
+
+```{r }
+x <- c(1, +12.4,-56.899,  0, -23, .000, -0, "4.5.3")
+grepl("^[-+]?[0-9]+\\.?[0-9]*$",x)
+#or
+grepl("^[-+]?[[:digit:]]+\\.?[[:digit:]]*$",x)
+```
+
+
+2. any line with exactly two words separated by any amount of whitespace (spaces or tabs). There may or may not be whitespace at the beginning or end of the line.
+```{r}
+x <- c("   stats rocks", "I love stats")
+grepl("^[[:blank:]]*[[:alpha:]]+[[:blank:]]+[[:alpha:]]+[[:blank:]]*$",x)
+
+```
+
+## `grepl()`, `gsub()`, `extractMatches()`
+
+Regular expressions are used for several purposes:
+
+* to detect whether a pattern is contained in a string. Use `filter()` and `grepl()`
+
+details:
+
+1. grepl() searches for matches to regexp within each element of a character vector and returns a logical vector
+
+2. syntax: `grepl(regex,vec)`
+
+example: Here is a list of names from the Bible:
+```{r}
+BibleNames <- read.file("http://tiny.cc/dcf/BibleNames.csv")
+head(BibleNames)
+```
+
+Which names have any words in them: "bar", "dam", "lory"?
+
+```{r}
+BibleNames %>%
+  filter(grepl("(bar)|(dam)|(lory)", name)) %>%
+  head()
+```
+
+
+* to replace the elements of that pattern with something else. Use `mutate()` and `gsub()`
+
+details:
+
+1. `gsub()` searches for matches to argument regexp within each element of a character vector and performs replacement of all matches
+ 
+2. syntax:`gsub(regex, replacement, vec)`
+
+```{r,echo=FALSE, include=FALSE}
+Debt <- data.frame(country=c("World","United States", "Japan"),debt=c("$56,308 billion", "$17,607 billion","$9,872 billion"), percentGDP=c("64%","73.60%","214.30%"))
+
+```
+
+Clean up the Debt data table below so it only has numbers
+
+```{r}
+head(Debt)
+```
+
+```{r}
+Debt %>% 
+  mutate( debt=gsub("[$,]|billion","",debt),
+          percentGDP=gsub("%", "", percentGDP))
+```
+
+
+* to pull out the matches for marked regions of regular expressions use `extractMatches()` from the DataComputing package.
+
+Details:
+
+1. input is a data table and output is a data table with one or more additional columns with the extractions
+
+2. syntax is `df %>% extractMatches(regex, var,...)` 
+
+3. wrap part of the regexp in parentheses to signal that the matching content is to be extracted as a string
+
+4. when there is no match `extractMatches()` returns `NA`
+example
+
+```{r}
+data.frame(string=c("hi there there","bye")) %>% extractMatches("r(e)",string)
+
+```
+
+
+What are the most common end vowels for Bible names?
+
+To answer this question, you have to extract the last vowel from the name.  The `extractMatches()` transformation function can do this.  
+
+```{r}
+BibleNames %>% 
+  extractMatches( "([aeiou])$", name, vowel = 1) %>% 
+  group_by(vowel ) %>% 
+  summarise( total= n()) %>%
+  arrange( vowel, desc(total) )
+```
+
+What Bible Names start and end with a vowel?
+
+```{r}
+BibleNames %>% 
+  extractMatches( "^([AEIOU]).*([aeiou])$", name, beg_vowel=1, end_vowel=2) %>% 
+  filter(!is.na(beg_vowel) & !is.na(end_vowel)) %>%
+  select(-meaning) %>%
+  head()
+```
+
+
+#Tasks for you
+
+1. Which Bible names in `BibleNames` have the word "man" in the meaning?
+
+```{r}
+BibleNames %>% 
+  filter(grepl("[[:blank:]]+man[[:blank:]]+",meaning))
+```
+
+2. Grab everything but the last letter of `names` in `BibleNames` that end with a vowel (example: Grab Ev from Eva)
+
+```{r}
+BibleNames %>% 
+  extractMatches(pattern="(.*)[aeiouy]$", name, root=1) %>% 
+  filter(!is.na(match)) %>%
+  select(-meaning) %>%
+  head()
+```
+
+##Iclicker
+
+```{r, echo=show_answers, eval=show_answers}
+BibleNames %>% extractMatches("^[A-Z]..(.*)[aeiou]$", name, match=1) %>% head(4)
+```
+

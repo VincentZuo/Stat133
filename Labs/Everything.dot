@@ -1,0 +1,28 @@
+digraph Everything {
+
+                nodesep=1.0; // increases the separation between nodes
+                rankdir = "LR";
+
+                node [fontname=Courier] //All nodes will this shape and colour
+                edge [color=Blue, fontsize = 40] //All the lines look like this
+
+                //Lecture 12 Themes
+                //ggplot themes, theme element functions
+                Themes [label = "themes"]
+                ggplot2_themes [label = "ggplot2 themes"]
+                
+                Theme_element_functions [label = "Theme element\n functions"]
+                Theme_elements [label = "Theme elementa"]
+                Inheritance [label = "Inheritance"]
+                
+                Theme_functions [label = "theme functions"]
+
+                Colors_in_R [label = "colors in R"]
+
+                Themes -> {ggplot2_themes, Theme_element_functions, Theme_elements, Theme_functions, Colors_in_R}
+                Theme_elements -> Inheritance
+
+                //Lecture 10
+                
+
+}

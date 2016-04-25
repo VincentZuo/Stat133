@@ -1,0 +1,171 @@
+---
+title: "Stat 133 Lab 8"
+author: "Jiacheng Wu"
+date: "03/10/2016"
+output: 
+  html_document:
+    fig_height: 3
+    fig_width: 5
+---
+<!-- Don't edit in between this line and the one below -->
+```{r include=FALSE}
+# Don't delete this chunk if you are using the DataComputing package
+library(DataComputing)
+```
+*Source file* 
+```{r, results='asis', echo=FALSE}
+includeSourceDocuments()
+```
+<!-- Don't edit the material above this line -->
+
+### Problem 1
+```{r}
+# for calculation adopted from the lab
+vec = 1:50
+i = 1
+
+while(i < 50) {
+  vec[i] <- i^2
+  i <- i + 1
+}
+
+# vectorized calculation
+vecV <- 1:50
+vecV[1:49] <- vecV[1:49]^2
+
+all.equal(vec, vecV)
+
+```
+
+### Problem 2
+Write down what the vector x will contain after each line of R code, if they are executed sequentially.
+The values are written in the initialization form of the vector, and are checked by the `identical()` function
+```{r}
+# part 1
+x <- seq(from = 0, to = 8, by = 2)
+x_contain <- c(0, 2, 4, 6, 8)
+identical(x, x_contain, num.eq = TRUE)
+
+# part 2
+x[x < 4] <- NA
+x_contain <-c(NA, NA, 4, 6, 8)
+# The first two outputs are NA because in R NA == NA will output NA
+identical(x, x_contain, num.eq = TRUE, single.NA = TRUE )
+
+# part 3
+x[] <- 0
+x_contain <-c(0, 0, 0, 0, 0)
+identical(x, x_contain, num.eq = TRUE)
+
+# part 4
+x <- 0
+x_contain <- 0
+identical(x, x_contain, num.eq = TRUE)
+
+```
+
+### Problem 3
+The lapply function in R operates on a vector and returns a list.
+
+### Problem 4
+```{r}
+# Initialization process
+set.seed(1337)
+m <- matrix(runif(15000, -3, 3), ncol = 3)
+
+# use for loop to calculate the squared sum
+m.ssq.loop <- vector(, 0)
+for (i in 1:5000) {
+  a_sq = m[i, 1]^2
+  b_sq = m[i, 2]^2
+  c_sq = m[i, 3]^2
+  m.ssq.loop <- c(m.ssq.loop, a_sq+b_sq+c_sq)
+}
+
+# use apply function 
+m.ssq.apply <- apply(m, 1, function(x) x[1]^2 + x[2]^2 + x[3]^2)
+
+# sanity
+identical(m.ssq.loop, m.ssq.apply, num.eq = TRUE)
+```
+
+### Problem 5
+```{r}
+# Initialization from the lab
+Year <- c(2000, 2001)
+Algeria <- c(7 ,9)
+Brazil <- c(12, NA)
+Columbia <- c(16, 18)
+
+table1 <- data.frame(Year, Algeria, Brazil, Columbia)
+
+# part a
+table2 <- table1 %>%
+  gather(Country, Value, Algeria, Brazil, Columbia) %>%
+  select(Country, Year, Value) %>%
+  arrange(Country)
+table2
+
+# part b
+## calculate the averages
+table3 <- table2 %>%
+  spread(Country, Value)
+table3$Average <- rowMeans(table3[, -1], na.rm = TRUE)
+table3
+```
+
+### Problem 6
+
+#### (a). glyphs in the graph
+There are points and lines in this graph.
+#### (b). aesthetics of each glyph
+The points have colors, x position and y position. The lines have colors and positions are determined by points.
+#### (c). variables are being mapped to each aesthetic
+Educ is mapped to x position of the point, Wage is mapped to y position. Sex is mapped to color of both the points and the lines.
+#### (d). Are the variables qualitative or quantitative
+Wage and Educ are quantitative. Sex is qualitative.
+#### (e). What are the guides on this graph?
+There are title, legends, x axies label and y axies label.
+#### (f). reconstruct the graphics
+```{r}
+data <- CPS85 %>%
+  select(wage, educ, sex) %>%
+  group_by(sex)
+ggplot(data, aes(x = educ, y = wage, col = sex)) +geom_point() +ylim(0, 15) + geom_smooth(method = "lm") + ggtitle("Wage vs. Education in CPS85")
+```
+
+### Problem 7
+```{r}
+# part a
+SplitChars <- function(string) {
+  list <- unlist(strsplit(string, ""))
+  return (list)
+}
+
+my.string <- "ggplot2 is a data visualization package for the statistical programming language R"
+res <- SplitChars(my.string)
+res
+
+# part b
+asRr <- c("a", "s", "R", "r")
+count <- 0
+for (i in 1:length(res)) {
+  if (res[i] %in% asRr) {
+    count <- count + 1
+  }
+}
+count
+
+# part c
+Reverse <- function(vector) {
+  mid <- ceiling(length(vector) /2)
+  last <- length(vector)+1
+  for (i in 1:mid) {
+    tmp <- vector[i]
+    vector[i] <- vector[last-i]
+    vector[last-i] <- tmp
+  }
+  return (vector)
+}
+my.string %>% SplitChars %>% Reverse
+```

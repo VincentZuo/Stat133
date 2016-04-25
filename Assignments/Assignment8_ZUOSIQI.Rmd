@@ -1,0 +1,142 @@
+---
+title: "Untitled"
+author: ""
+date: ""
+output: 
+  html_document:
+    fig_height: 3
+    fig_width: 5
+---
+<!-- Don't edit in between this line and the one below -->
+```{r include=FALSE}
+# Don't delete this chunk if you are using the DataComputing package
+library(DataComputing)
+```
+*Source file* 
+```{r, results='asis', echo=FALSE}
+includeSourceDocuments()
+```
+<!-- Don't edit the material above this line -->
+
+
+1. In everyday language, describe a pattern that you think will identify the information you are looking for.   
+2. Translate (1) into the form of a regular expression.   
+3. Filter to retain the cases that match the expression. Hint: filter() and grepl() are useful for this.   
+4. Filter to retain the cases that do not match the expression.   
+5. Examine the results of (2) and (3) to identify shortcomings in your patterns.   
+6. Improve or extend the pattern to deal with the mistaken cases.   
+6. Repeat until satisfied.   
+Put extraction parentheses around the parts of the regular expression that contain the info you want.   
+
+```{r}
+download.file(url="http://tiny.cc/dcf/CMS_ProvidersSimple.rds",
+              destfile = "YourNameForTheFile.rds", mode = "wb")
+DataTable <- readRDS("YourNameForTheFile.rds")
+Addresses <- read.file("http://tiny.cc/dcf/street-addresses.csv")
+```
+
+Use the provided pattern to test for potential extractions
+
+```{r}
+head(Addresses)
+pattern <- "(ST|RD|ROAD)" # It constructs string containing "ST","RD" or "ROAD".
+LeftOvers <-
+  Addresses %>% 
+  filter( ! grepl(pattern, address), #Select every address without the pattern above,
+          ! grepl(" APT|UNIT [[:digit:]]+$", address)) # also address that does not contain APT or unit number
+head(LeftOvers)
+```
+
+Now apply the same trick on datatable:
+
+```{r}
+nrow(DataTable)
+pattern <- "(ST|RD|ROAD)( |\\.|$)"
+LeftOvers <-
+  DataTable %>% 
+  filter( ! grepl(pattern, address))
+
+nrow(LeftOvers)
+
+sampled <- LeftOvers %>%
+  sample_n(size = 20)
+sampled
+```
+
+After some test reading above i found AVE, PKWY, BLVD , WAY
+
+```{r}
+pattern <- "(AVENUE|AVE|PKWY|BLVD|WAY)( |\\.|$)"
+LeftOvers <-
+  LeftOvers %>% 
+  filter( ! grepl(pattern, address))
+
+nrow(LeftOvers)
+
+sampled <- LeftOvers %>%
+  sample_n(size = 20)
+sampled
+```
+
+After some test reading above i found PARK, HWY, DR, DRIVE
+```{r}
+pattern <- "(PARK|HWY|DR|DRIVE)( |\\.|$)"
+LeftOvers <-
+  LeftOvers %>% 
+  filter( ! grepl(pattern, address))
+
+nrow(LeftOvers)
+
+sampled <- LeftOvers %>%
+  sample_n(size = 20)
+sampled
+```
+
+After some test reading above i found PL, NE, VLG, STE, STREET, LN, SQ
+```{r}
+pattern <- "(PL|NE|VLG|STE|STREET|LN|SQ)( |\\.|$)"
+LeftOvers <-
+  LeftOvers %>% 
+  filter( ! grepl(pattern, address))
+
+nrow(LeftOvers)
+
+sampled <- LeftOvers %>%
+  sample_n(size = 20)
+sampled
+```
+
+
+After some test reading above i found PLAZA, NALL, ROUTE
+```{r}
+pattern <- "(PLAZA|HALL|MALL|ROUTE)( |\\.|$)"
+LeftOvers <-
+  LeftOvers %>% 
+  filter( ! grepl(pattern, address))
+
+nrow(LeftOvers)
+
+sampled <- LeftOvers %>%
+  sample_n(size = 20)
+sampled
+```
+
+##Results
+
+Now I reduced the size of unfiltered from 909605 to 57548, which is sufficient reduction
+```{r}
+pattern = "(ST|RD|ROAD|AVENUE|AVE|PKWY|BLVD|WAY|PARK|HWY|DR|DRIVE|PL|NE|VLG|STE|STREET|PLAZA|HALL|MALL|ROUTE)( |\\.|$)"
+res <-
+  DataTable %>% 
+  extractMatches(pattern, address) %>%
+  filter(!is.na(match1))
+```
+
+Here are most common ending for addresses.
+```{r}
+res %>%
+  group_by(match1) %>%
+  summarise(total = n()) %>%
+  arrange(desc(total)) %>%
+  head(10)
+```

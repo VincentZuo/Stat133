@@ -1,0 +1,59 @@
+---
+title: "Stat 133 HW 5"
+author: "Jiacheng Wu"
+date: "02/19/2016"
+output: 
+  html_document:
+    fig_height: 3
+    fig_width: 5
+---
+<!-- Don't edit in between this line and the one below -->
+```{r include=FALSE}
+# Don't delete this chunk if you are using the DataComputing package
+library(DataComputing)
+```
+*Source file* 
+```{r, results='asis', echo=FALSE}
+includeSourceDocuments()
+```
+<!-- Don't edit the material above this line -->
+
+## 1. Analyze the data 
+In this part, I filter the data provided, only keeping cases with CONTROL value 1 or 2, CCSIZSET value 2, 3, 4, and 5. Then I select certain columns in entries and join them with the NPT4 to get the short names.
+```{r echo = FALSE, warning=FALSE}
+load("ScorecardSmall.Rda")
+qnames = read.csv('NPT4-names.csv')
+library(ggthemes)
+
+Variables <- ScorecardSmall %>%
+  gather(key = long_name, value = NETCOST, NPT41_PUB:NPT45_PRIV)
+
+Variables_narrow <- Variables %>%
+  filter(NETCOST != "NA" & CONTROL != 3 & !(CCSIZSET %in% c(1, 6, 7, 8)))
+
+Variables_join <- qnames %>%
+  left_join(Variables_narrow) %>%
+  select(ADM_RATE, CONTROL, short_name, NETCOST)
+
+Variables_exp <- Variables_join %>%
+  filter(short_name != "Q2" & short_name != "Q4")
+
+Variables_mutate <- Variables_exp %>%
+  mutate(CONTROL = ifelse(CONTROL == 1, "Public", "Private"))
+
+Variables_mutate$ADM_RATE = Variables_mutate$ADM_RATE * 100
+Variables_mutate$NETCOST = Variables_mutate$NETCOST/1000
+```
+
+
+## 2. Plot the graph
+```{r, echo=FALSE, warning=FALSE, fig.height= 6, fig.width= 9}
+ggplot(Variables_mutate, aes(x = ADM_RATE, y = NETCOST)) + 
+  geom_point(alpha = 0.4, color = "blue") +
+  facet_grid(CONTROL ~ short_name) +
+  stat_smooth(method=loess, color = "red") +
+  theme_igray() +
+  labs(title = "Score Card", x = "Admission rate, %", y = "Net cost per year, $,000") +
+  theme()
+
+```

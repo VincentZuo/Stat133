@@ -1,0 +1,168 @@
+---
+title: "Lecture 7"
+author: "Adam Lucas"
+date: ""
+output: 
+  html_document:
+    fig_height: 3
+    fig_width: 5
+---
+<!-- Don't edit in between this line and the one below -->
+```{r include=FALSE}
+# Don't delete this chunk if you are using the DataComputing package
+library(DataComputing)
+library(knitr)
+library(xtable)
+```
+*Source file* 
+```{r, results='asis', echo=FALSE}
+includeSourceDocuments()
+```
+<!-- Don't edit the material above this line -->
+
+
+#Today:
+
+1. Review ideas of Chapter 6 (Frames, Glyphs, and other components of graphs)
+2. Chapter 7 (Wrangling and Data Verbs)
+
+#Chapter 6 
+
+Volcabulary:
+
+See figure 6.7 page 57  
+
+*Frame*= The space for drawing gyphs. Here a rectangular region set by roadways and gdp.  
+*Glyph*= A symbol or a marking in a frame . There is one glyph for for each case in the data table. Here points.  
+*Aesthetics*= The properties of a glyph. Here x,y, size.  
+_Scales and Guides_= Variables of the data table are *mapped* to aesthetics of the glyph. Here, x=roadways, y= gdp, educ= size  
+*Facets*= Multiple side by side graphs used to display levels of a categorical variable. Here facets are different ranges of Internet connectivity.    
+*Layers*= data from more than one data table are graphed together. Here not layered.  
+
+#In class exercise:
+Look at graph from [nytimes](http://www.nytimes.com/newsgraphics/2014/senate-model/comparisons.html) on prediction of 36 senate seats from different polling organizations. 
+
+1. What variables define the frame in this graphic?
+2. What is the glyph and its graphical attributes (i.e. aesthetics)?
+3. What do you think the scales are?
+
+#Chapter 7 Wrangling and Data Verbs
+
+Rarely is a data table *glyph ready*. We usually need to *wrangle* the data.
+For example say we want to make a bar chart ranking the candidates by how many precincts they are in first place.
+
+```{r}
+#not glyph ready
+head(Minneapolis2013)
+
+
+
+FirstPlaceTally <- Minneapolis2013 %>% 
+  rename(candidate=First) %>%
+  group_by(candidate) %>%
+  summarise(total=n()) %>%
+  arrange( desc(total))
+
+#glyph ready
+
+FirstPlaceTally
+
+```
+
+
+
+
+Here is a nice presentation of Data Verbs we will be using:
+[link](http://dtkaplan.github.io/DCF-2014/CourseNotes/BasicDataCommands/MoreDataVerbs.html)
+
+#In class exercise:
+
+Each of these tasks can be performed using a single data  
+verb. For each task, say which verb it is:
+choices are: summarise(), mutate(), arrange(), filter(), select(), group_by()
+```{r}
+```{r}
+
+```
+
+```
+
+a. Find the average of one of the variables.
+
+b. Add a new column that is the ratio between two variables.
+
+c. Sort the cases in descending order of a variable. 
+
+d. Create a new data table that includes only those cases that meet a criterion.
+
+e. From a data table with several variables produce an output that has the same cases but only the first two variables.
+
+f. From a data table with a categorical variables and a quantitative variable produce a count for the number of cases for each level of the categorical variable. 
+
+
+solution:
+```{r, echo=FALSE}
+mtcars <- mtcars %>%
+  select(mpg, cyl, disp) 
+```
+
+```{r}
+mtcars
+```
+
+
+a.
+```{r}
+mtcars %>% 
+  summarise(avg_count=mean(cyl))
+```
+b.
+```{r}
+mtcars %>% 
+  mutate(ratio=mpg/cyl) %>% 
+  tail()
+ 
+```
+c.
+```{r}
+mtcars %>% 
+  arrange(desc(mpg)) %>%
+  tail()
+```
+d.
+```{r}
+mtcars %>% 
+  filter(mpg >30)
+```
+e.
+
+```{r}
+mtcars %>% 
+  select(mpg, cyl) %>%
+  tail()
+```
+f.
+
+
+
+```{r}
+BabyNames %>%
+  group_by(sex) %>%
+  summarise(total=sum(count))
+```
+
+#iclicker question from class
+The graph presented in class isn't *glyph* ready. You need to do some data wrangling. Notice that we need to join two tables to get a table including LandArea. This is a correction from class. We will do joins in chapter 10.
+```{r}
+table1 <- ZipGeography %>% 
+  group_by(State) %>%
+  summarise(aveZipPopulation=mean(Population, na.rm=TRUE)) %>%
+  arrange(aveZipPopulation)
+  
+table2 <- ZipGeography %>%
+  select(State, LandArea)
+  
+table1 %>% left_join(table2,by="State")
+```
+
+

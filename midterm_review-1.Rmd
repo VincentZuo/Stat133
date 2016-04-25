@@ -1,0 +1,142 @@
+---
+title: "Lab 7 "
+output: html_document
+---
+```{r, echo=FALSE, include=FALSE}
+library(DataComputing)
+library(magrittr)
+library(ggplot2)
+library(dplyr)
+```
+
+#Question 1
+
+```{r}
+# built-in dataset in R
+head(airquality)
+```
+Change data from wide to narrow format (above) using gather function. 
+Group Ozone, Solar.R, Wind, Temp into one variable called `type` and create another column called `value` to store their values. Your output should look like this:
+
+```{r, echo = FALSE}
+airquality %>%
+  gather(key = type, value = value, Ozone, Solar.R, Wind, Temp) %>%
+  head(5)
+```
+
+#Question 2
+Suppose you have a data frame, `data`, as given below:
+```{r data, echo = F}
+# Data frame for questions
+data <- data.frame(V1 = rep(c("a","b","c"), each = 2),
+                   V2 = rep(c(1:2), times = 3),
+                   V3 = rep(c("alpha", "beta", "gamma")),
+                   V4 = seq(10, 60, by = 10))
+print(data)
+```
+
+Assuming that the `tidyr` and `dplyr` libraries are already loaded, write down what the output for the following code.  The final result is enough for full credit, but partial credit will be given for writing out and labelling intermediate steps.
+
+```{r SQ1, results = 'hide'}
+data %>%
+  filter(V1 == "a") %>% # Step 1
+  select(V2, V4) %>% # Step 2
+  gather(key = Apple, value = Banana, V2, V4) %>% # Step 3
+  mutate(Apple = Banana) # Step 4
+```
+
+Step 1, choose all rows where v1 is 'a'  
+```{}
+##   V1 V2    V3 V4   
+## 1  a  1 alpha 10  
+## 2  a  2  beta 20  
+```
+
+Step 2 choose only the v2and v4 column of step1  
+```{}
+##   V2 V4  
+## 1  1 10  
+## 2  2 20  
+```
+
+Step 3 gather key as 'Apple' with 'V2', 'V4' as column values under 'Apple', but their actual value goes under 'Banana'  
+```{}
+##   Apple Banana  
+## 1    V2      1  
+## 2    V2      2  
+## 3    V4     10  
+## 4    V4     20  
+```
+ 
+Step 4 REplacethe 'Apple' column with 'Banana' column but preserve the 'Apple' column header  
+```{}
+##   Apple Banana  
+## 1    1      1  
+## 2    2      2  
+## 3    10     10  
+## 4    20     20  
+```
+
+#Question 3
+Suppose you have a data frame, `data`, as given below.
+
+a) Write a function called `fix_missing_99` that takes one argument: `x`, a numeric vector.  The function should replace every component of `x` equal to -99 with `NA`.
+
+```{r}
+fix_missing_99 <- function(x){
+  x[x == -99] = NA
+  return (x)  
+}
+
+test_vec = c(-99, -98, -999, -1, -99, 0, NA)
+fix_missing_99(test_vec)
+```
+
+b) Write a loop that replaces every -99 in `data` with `NA`.  For full credit, your code must use the function in part (a) and it should continue to work without modification if additional columns are added to the data frame.
+
+```{r}
+for (i in 1:nrow(data)) {
+  data[i,] = fix_missing_99(data[i,])
+}
+data
+```
+
+c) Write down an appropriate call from the `apply` family of functionals to perform the same task as in part (b).
+
+```{r data2, echo = F}
+set.seed(1014)
+data <- data.frame(replicate(6, sample(c(1:10, -99), 6, rep = TRUE)))
+names(data) <- letters[1:6]
+data <- apply(data, 2, fix_missing_99)
+rownames(data) <- c(1, 2, 3, 4, 5, 6)
+data
+```
+
+#Question 4
+
+Assuming the 'ggplot2' is already loaded. 
+The first 6 rows of the 'diamond' dataset are: 
+  
+```{r, echo = FALSE}
+head(diamonds)
+```
+What command in 'ggplot' that you will use to generate the graph given below? 
+```{r echo=FALSE,fig.height=10,fig.width=10}
+
+#according to piazza instructor's post, im supposed to do this
+#but the result still doesnt look alike
+#https://piazza.com/class/ikun6lb0zzq4pf?cid=39
+set.seed(1337)
+d <- sample_n(diamonds, 10000)
+
+ggplot(d, aes(x = carat, y = price, color = clarity)) +
+  facet_grid(color ~cut) +
+  geom_point(size = 2.2) +
+  geom_smooth( color = 'blue', fill = NA, size = 1.3) +
+  labs(x = 'carat', y = 'price', title = 'carat vs price') + 
+  theme(
+    
+  )
+  
+```
+

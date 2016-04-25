@@ -1,0 +1,251 @@
+---
+title: "Lec11"
+author: "stat 133"
+date: "February 12 2016"
+output: 
+  html_document:
+    fig_height: 3
+    fig_width: 5
+---
+<!-- Don't edit in between this line and the one below -->
+```{r include=FALSE}
+# Don't delete this chunk if you are using the DataComputing package
+library(DataComputing)
+library(printr)
+```
+*Source file* 
+```{r, results='asis', echo=FALSE}
+includeSourceDocuments()
+```
+<!-- Don't edit the material above this line -->
+
+
+#Today
+1. Data verb separate() (not in book)
+2. Chap 11 (wide versus narrow tables)
+3. Aestetics versus Attributes in ggplot 
+
+#1. The data verb: separate() (not in book)
+
+You can separate one column into multiple columns using the date verb separate()
+
+##Example
+
+ 
+```{r,echo=FALSE}
+iris_narrow <- iris %>%
+  gather(key, Value, -Species) %>%
+  head()
+```
+
+```{r}
+iris_narrow %>% head()
+```
+
+
+
+```{r}
+iris_narrow %>% separate(key, into=c("Part", "Measure"), sep="\\.")
+```
+
+
+### Task for you:
+
+Here is a data frame with a column `x` we wish to split into three columns 
+
+```{r}
+df <- data.frame(x=c("1-2-3", "a-b-c"),  y=c(1,2))
+df
+
+```
+
+Do this using into=c("a","b","c") and sep="-"
+
+
+
+```{r}
+df %>% separate(x,into=c("a","b","c"), sep="-")
+```
+
+
+
+#2. Wide versus Narrow data tables (chapter 11)
+
+A data table can be presented in wide or narrow format. Each have their own advantatges. 
+```{r,echo=FALSE}
+
+
+BP_wide <- data.frame( subject=c("BHO","GWB","WJC"),
+                    before=c(120,115,105),
+                    after=c(160,135,145))
+BP_narrow <- data.frame( subject=c("BHO","GWB","WJC","GWB","WJC","BHO"), when=c("before","before","after","after","before","after"), sbp=c(160,115,145,135,105,160))
+
+```
+Wide format is easier to get the difference of before and after of a test for each patient.
+```{r}
+BP_wide
+
+```
+
+Narrow format is easier to include additional cases  of a patient if they are tested on different days. A narrow format is sometimes called a tidy data table.
+
+```{r}
+BP_narrow
+```
+
+The data verbs 'spread()` and `gather()` convert between these formats.
+
+### `gather()`  transforms *BP_wide* into *BP_narrow*
+
+The *key* variable is the name of the new variable in the narrow format that is *gathered*. 
+
+```{r}
+BP_narrow1 <-  BP_wide %>%
+  gather(key= when, value = sbp, before, after)
+BP_narrow1
+```
+
+
+### `spread()`  transforms *BP_narrow* into *BP_wide*
+
+The *key* variable is the name of the original variable in the narrow format that is *spread*. 
+
+```{r}
+BP_wide1 <-  BP_narrow %>% 
+  spread(key= when, value = sbp)
+BP_wide1
+```
+
+### task for you
+
+Is the following data set narrow or wide? Convert it to the other data table format.
+
+```{r}
+Baby_narrow <- BabyNames %>% 
+  filter(name == "Sue") %>%
+  group_by(name,sex) %>%
+  summarise(total=sum(count))
+Baby_wide <- Baby_narrow %>% spread(key=sex, value= total )
+Baby_wide 
+```
+
+
+```{r}
+Baby_wide %>% gather(key=sex, value=value, F, M)
+```
+
+Note that a narrow table is tidy as we defined in the first day of class. There are no column names as there are in the wide format.
+
+
+### example
+
+Lets examine the wide iris data table:
+
+```{r}
+head(iris)
+```
+
+Suppose you want to make the following plot:
+
+
+```{r, echo=FALSE}
+iris.tidy <- iris %>%
+  gather(key, Value, -Species) %>%
+  separate(key, c("Part", "Measure"), "\\.") 
+
+ggplot(iris.tidy, aes(x = Species, y = Value, col = Part)) +
+  geom_jitter() +
+  facet_grid(. ~ Measure)
+```
+
+The data table `iris` isn't gyph ready. Here is the glyph ready table:
+
+```{r,echo=FALSE}
+iris.tidy <- iris %>%
+  gather(key, Value, -Species) %>%
+  separate(key, c("Part", "Measure"), "\\.") 
+iris.tidy %>% head()
+  
+  
+```
+
+
+*step 1:* Use gather
+
+```{r}
+iris_narrow <- iris %>%
+  gather(key, Value, -Species) %>%  #here -Species means all columns except Species
+  head()
+iris_narrow %>% head()
+```
+
+*step 2:* Use the data verb separate()
+
+```{r}
+iris_narrow_sep <- iris_narrow %>% separate(key, into=c("Part", "Measure"), sep="\\.")
+head(iris_narrow_sep)
+```
+
+
+
+# 3. Aesthetics versus fixed attributes
+
+Aesthetics are properties of the graph that we map to a variable.  
+(example col=`sex` in the `BabyNames` data set)  
+Attribute are properties of the graph that we set equal to a fixed value.  
+(example col="red")
+
+##Examples
+```{r}
+mtcars %>% ggplot(aes(x=wt,y=mpg)) + geom_point(aes(col=as.factor(cyl))) 
+```
+```{r}
+
+```
+
+
+```{r}
+mtcars %>% ggplot(aes(x=wt,y=mpg)) + geom_point(col="red") 
+```
+
+Note: attributes don't have a legend since since it takes only a fixed value.
+
+
+# i-clicker questions
+
+
+```{r,warning=FALSE, include=FALSE}
+unloadNamespace('printr')
+BP_wide <- data.frame( subject=c("BHO","GWB","WJC"),
+                    before=c(120,115,105),
+                    after=c(160,135,145))
+```
+
+
+
+```{r, include=FALSE}
+BP_wide
+```
+
+
+```{r, warning=FALSE, include=FALSE}
+BP_wide %>% 
+  gather(key=when, value=sbp, subject,before,after)
+```
+
+
+## Q3
+```{r}
+unloadNamespace('printr')
+iris<- iris %>% mutate(Flower=1:nrow(iris))
+head(iris)
+```
+
+```{r}
+iris.wide <- iris %>%
+  gather(key, value, -Species, -Flower) %>%
+  separate(key, c("Part", "Measure"), "\\.") %>%
+  spread(Measure, value) 
+iris.wide %>% head()
+```
+

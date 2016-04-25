@@ -1,0 +1,394 @@
+---
+title: "lec 12"
+author: ""
+date: ""
+output: 
+  html_document:
+    fig_height: 3
+    fig_width: 5
+---
+<!-- Don't edit in between this line and the one below -->
+```{r include=FALSE}
+# Don't delete this chunk if you are using the DataComputing package
+library(DataComputing)
+library(printr)
+```
+*Source file* 
+```{r, results='asis', echo=FALSE}
+includeSourceDocuments()
+```
+<!-- Don't edit the material above this line -->
+
+#Today
+
+1. Themes in ggplot2 (from chapter 3 in Data Camp's second Course ggplot2 (2))
+
+# 1. ggplot2 themes
+
+The theming system in ggplot2 enables a user to control non-data elements of a ggplot object. It is composed of the following:
+
+* _theme elements_, which refer to individual attributes of a graphic that are independent of the data, such as font size, axis ticks, appearance of grid lines or background color of a legend;
+
+* _theme element functions_, which enables you to modify the settings of certain theme elements;
+
+* _theme functions_, which define the settings of a collection of theme elements for the purpose of creating a specific style of graphics production;
+
+* _the theme() function_, used to locally modify one or more theme elements in a specific ggplot object.
+
+
+## motivating example
+
+Consider the following simple scatterplot using the mpg data:
+
+```{r}
+mpg %>% ggplot( aes(x = cty, y = hwy, color = factor(cyl))) +
+  geom_jitter() +
+  labs(
+    x = "City mileage/gallon",
+    y = "Highway mileage/gallon",
+    color = "Cylinders"
+  )
+```
+
+Suppose we want to make the following modifications to this plot:
+
+* change the default colors in the display  
+* increase the font size of the axis labels  
+* remove the minor grid lines on both axes  
+* add a plot title  
+* move the legend inside the graphics region  
+* change the background color of the graphics region  
+
+
+The first of these depends on the data itself, so we can use one of the `scale_colour_*()` functions for that purpose ---see [ggplot2 help](http://docs.ggplot2.org/current/).
+
+The others influence the rendering of the graphic but are independent of the data being plotted. These are called theme elements, i.e., aspects of a ggplot object that are capable of modifying its appearance but are neither directly related to data nor aesthetics associated with data.
+
+```{r,eval=FALSE}
+theme_grey()
+```
+
+The output of this call lists the properties of a ggplot object that can be accessed by users along with their default values, expressed as a list of lists. The theme() function allows you to locally modify properties of theme elements in a ggplot object.
+
+One way of implementing the desired changes listed above is as follows:
+
+```{r,echo=TRUE}
+p <- mpg %>% ggplot( aes(x = cty, y = hwy, colour = factor(cyl))) +
+  geom_jitter() +
+  labs(
+    x = "City mileage/gallon",
+    y = "Highway mileage/gallon",
+    colour = "Cylinders"
+  ) +
+  scale_colour_brewer(type = "seq", palette = "Oranges")
+
+# Use theme() to modify theme elements
+p + labs(title = "Highway vs. city mileage per gallon") +
+  theme(
+    axis.text = element_text(size = 14),
+    plot.title = element_text(size=12),
+    legend.key = element_rect(fill = "navy"),
+    legend.background = element_rect(fill = "white"),
+    legend.position = c(0.14, 0.80),
+    panel.grid.major = element_line(colour = "grey40"),
+    panel.grid.minor = element_blank(),
+    panel.background = element_rect(fill = "navy")
+  )
+```
+
+The `element_xx()` functions modify theme elements with attributes (e.g., color, text size). Some theme elements are defined in terms of a unit of measurement, while others, such as legend.position, control the positioning of a theme element. These will be illustrated in greater detail in the examples to follow.
+
+In the above call, `element_text()` modifies the size property of the `axis.text` theme element, `element_rect()` changes the fill color of the `legend.key`, `legend.background` and `panel.background` theme elements, `element_line()` alters the color of the major grid lines in both directions and `element_blank()` removes the minor grid lines from the display in both directions. Finally, the form of the `legend.position()` call moves the center of the legend grob to a position in coordinates relative to the size of the overall graphics device (not the graphics panel that delimits the graph itself). In this case, the default theme function is `theme_grey()`, so `theme()` locally changes the above settings in `theme_grey()` to the values specified in the call.
+
+#Task for you:
+
+Copy the previous chunk and make modifications to produce the following plot:
+
+
+```{r,echo=TRUE}
+p <- mpg %>% ggplot( aes(x = cty, y = hwy, colour = factor(cyl))) +
+  geom_jitter() +
+  labs(
+    x = "City mileage/gallon",
+    y = "Highway mileage/gallon",
+    colour = "Cylinders"
+  ) +
+  scale_colour_brewer(type = "seq", palette = "Oranges")
+
+# Use theme() to modify theme elements
+p + labs(title = "Highway vs. city mileage per gallon") +
+  theme(
+    axis.text = element_text(size = 20),
+    plot.title = element_text(size = 20,color = "red"),
+    legend.key = element_rect(fill = "black"),
+    legend.background = element_rect(fill = "white"),
+    legend.position = "right",
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.background = element_rect(fill = "grey40")
+  )
+```
+
+
+
+The default theme for *ggplot2* graphics is `theme_grey()`, but you can override it with another (complete) theme function. A second theme function built into the system is `theme_bw()`, which can be plugged in as a replacement for `theme_grey()` as follows:
+
+```{r}
+p + labs(title = "Highway vs. city mileage per gallon") +
+  theme_bw() +
+  theme(axis.text = element_text(size = 14),
+    legend.key = element_rect(fill = "navy"),
+    legend.background = element_rect(fill = "white"),
+    legend.position = c(0.14, 0.80),
+    panel.grid.major = element_line(colour = "grey40"),
+    panel.grid.minor = element_blank()
+  )
+```
+
+
+Adding `theme_bw()` to the ggplot() call means that `theme_bw` becomes the default theme for the created ggplot object. The call `theme_bw()` produces a theme object which can be modified with `theme()`.
+
+## Theme element functions
+
+Most theme elements have several properties that can be modified through a corresponding element function.
+
+* `element_text()`  
+* `element_line()`  
+* `element_rect()` 
+* `element_blank()`
+
+### `element_text()`
+
+Purpose: To control the drawing of labels and headings.
+
+The table below lists the arguments of element_text() and their corresponding default values.
+```{r,echo=FALSE}
+data.frame(  Argument=c("family", "face", "colour","size","hjust","vjust","angle", "lineheight"), Description=c("font family","font face", "font color", "font size", "horizontal justification", "vertical justification", "text angle", "line height"), Default=c("“”", "plain","black", "10","0.5","0.5","0","1.1"))
+```
+
+### `element_line()`
+
+Purpose: To draw lines and segments such as graphics region boundaries, axis tick marks and grid lines.
+
+```{r,echo=FALSE}
+data.frame( Arument=c("colour","size","linetype"),Description=c("line color","line thinkness","type of line"), Default=c("black",0.5,1))
+```
+
+
+### `element_rect()`
+
+Purpose: To draw rectangles. It is mostly used for background elements and legend keys.
+
+```{r,echo=FALSE}
+data.frame(Arguement=c("fill","colour","size","linetype"),Description=c("fill color","border color","thinkness of border line", "type of border line"), Default=c("none", "black",0.5,  1))
+```
+
+### `echo_blank()`
+
+Purpose: To draw nothing.
+
+Arguments: none.
+
+The element_blank() function can be applied to any theme element controlled by a theme element function.
+
+
+#Task for you:
+
+Here are some theme elements for you to modify using the element functions above
+
+* axis.text =element_text(...)   
+* panel.background= element_rect(...)  
+* panel.grid =elememnt_line( ...)  
+* axis.ticks= element_blank()  
+
+here is a complete list: [ggplot-themes](http://docs.ggplot2.org/current/theme.html)
+```{r}
+set.seed(123)
+
+df <- diamonds[sample(1:nrow(diamonds), size = 1000),]
+
+df %>% ggplot(aes(carat, price)) + 
+  geom_point() + 
+  theme(axis.ticks = element_line(size = 10))
+
+```
+
+```{r,include=TRUE}
+set.seed(123)
+
+df <- diamonds[sample(1:nrow(diamonds), size = 1000),]
+
+df %>% ggplot(aes(carat, price)) + 
+  geom_point() + 
+  theme(axis.ticks = element_blank(), axis.text =element_text(size=20), panel.background= element_rect(fill = "blue"), panel.grid =element_line(linetype=2)  )
+
+```
+
+## Theme Elements
+
+The default theme function `theme_grey()` contains 38 individual theme elements. The first three of these are `line`, `rect` and `text`, whose default properties are defined through their respective theme element functions `element_line()`, `element_rect()` and `element_text()`. 
+
+
+## Inheritance of Theme Elements
+
+The first three elements in  [ggplot-themes](http://docs.ggplot2.org/current/theme.html) are
+`text`, `line` and `rect`, which, not coincidentally, are the same as the names of the basic theme element functions. Other theme elements inherit the values of these theme elements. For example, the theme elements `axis.text`, `legend.text`, `strip.text` and `axis.title` all inherit from text, while `axis.text.x` and `axis.text.y` further inherit from `axis.text`. This means the values of the components of the theme element text are passed on to axis.text as well as other elements that inherit from text or its children. You can override the default values of one or more theme elements by calling `theme()` and modifying the desired properties of theme elements therein.
+
+Here is a useful figure:
+inheritance: ![](/Users/Adam/Desktop/inheritance.png)
+
+Here is an example:
+
+```{r,include=TRUE}
+set.seed(123)
+
+df <- diamonds[sample(1:nrow(diamonds), size = 1000),]
+
+df %>% ggplot(aes(carat, price)) + 
+  geom_point() + 
+  theme(axis.ticks = element_blank(), text =element_text(size=30), panel.background= element_rect(fill= "blue"), panel.grid =element_line(linetype=2)  )
+
+```
+
+
+##Theme functions
+
+A theme function is an R function in ggplot2 that sets or parameterizes a collection of theme elements. Although the default themes in ggplot2 produce attractive graphics, they may not necessarily correspond with user requirements. If you find yourself modifying the same theme elements repeatedly with `theme()` or need to adapt a set of theme elements to conform to the requirements of a journal or other publication, then you should consider writing your own theme function.
+
+The purpose of a theme function is to either specify default settings for each theme element or modify the settings of an existing theme function to produce a new theme. For example, the foundational `theme_grey` function specifies default settings of each theme element, whereas `theme_bw` is a modification of `theme_grey`.
+
+There are nice theme functions made by other users:
+```{r}
+library(ggthemes)
+mpg %>% ggplot( aes(x = cty, y = hwy, color = factor(cyl))) +
+  geom_jitter() +
+  labs(
+    x = "City mileage/gallon",
+    y = "Highway mileage/gallon",
+    color = "Cylinders"
+  ) + theme_igray()
+
+```
+
+### Saving themes
+
+If you want all your figures to use a certain theme here is how to do it.
+
+
+Say my old default theme is `theme_grey()`
+I have written my own theme called `theme_pink` that I would like to use in all of my plots.
+
+
+```{r}
+theme_pink <- theme(panel.background = element_blank(),
+                    legend.key = element_blank(),
+                    legend.background = element_blank(),
+                    strip.background = element_blank(),
+                    plot.background = element_rect(fill = "red", color = "black", size = 3),
+                    panel.grid = element_blank(),
+                    axis.line = element_line(color = "black"),
+                    axis.ticks = element_line(color = "black"),
+                    strip.text = element_text(size = 16, color = "red"),
+                    axis.title.y = element_text(color = "red", hjust = 0, face = "italic"),
+                    axis.title.x = element_text(color = "red", hjust = 0, face = "italic"),
+                    axis.text = element_text(color = "black"),
+                    legend.position = "none")
+
+
+mpg %>% ggplot( aes(x = cty, y = hwy, color = factor(cyl))) +
+  geom_jitter() +
+  labs(
+    x = "City mileage/gallon",
+    y = "Highway mileage/gallon",
+    color = "Cylinders"
+  ) + theme_pink
+
+
+```
+
+You can make this your default theme using `theme_update()`. The value of the this function is your old theme which you can save: `old <- theme_update()`
+
+```{r}
+old=theme_update(panel.background = element_blank(),
+                    legend.key = element_blank(),
+                    legend.background = element_blank(),
+                    strip.background = element_blank(),
+                    plot.background = element_rect(fill = "red", color = "black", size = 3),
+                    panel.grid = element_blank(),
+                    axis.line = element_line(color = "black"),
+                    axis.ticks = element_line(color = "black"),
+                    strip.text = element_text(size = 16, color = "red"),
+                    axis.title.y = element_text(color = "red", hjust = 0, face = "italic"),
+                    axis.title.x = element_text(color = "red", hjust = 0, face = "italic"),
+                    axis.text = element_text(color = "black"),
+                    legend.position = "none")
+
+
+set.seed(123)
+
+df <- diamonds[sample(1:nrow(diamonds), size = 1000),]
+
+df %>% ggplot(aes(carat, price)) + 
+  geom_point() + 
+  theme(axis.ticks = element_line(size = 10))
+```
+
+You can restore your old theme
+
+```{r}
+theme_set(old)
+set.seed(123)
+
+df <- diamonds[sample(1:nrow(diamonds), size = 1000),]
+
+df %>% ggplot(aes(carat, price)) + 
+  geom_point() + 
+  theme(axis.ticks = element_line(size = 10))
+```
+
+## Colors in R
+
+Here is a list of [colors](http://www.stat.columbia.edu/~tzheng/files/Rcolor.pdf)
+
+### hexidecimal color code
+
+Colors can specified as a hexadecimal RGB triplet, such as "#0066CC". The first two digits are the level of red, the next two green, and the last two blue. The value for each ranges from 00 to FF in hexadecimal (base-16) notation, which is equivalent to 0 and 255 in base-10. For example, in the table below, “#FFFFFF” is white and “#990000” is a deep red.
+
+
+hexadecimal: ![](/Users/Adam/Desktop/hexadecimal.png)
+
+
+
+
+
+#Task for you
+
+Try some different colors in the code below (try hexadecimal and  non hexadecimal code)
+
+
+```{r}
+set.seed(955)
+# Make some noisily increasing data
+dat <- data.frame(xvar = 1:20 + rnorm(20,sd=3),
+                  yvar = 1:20 + rnorm(20,sd=3))
+
+ggplot(dat, aes(x=xvar, y=yvar)) +
+    geom_point(shape=1) +    # Use hollow circles
+    geom_smooth(method=lm, fill="azure1")   # Add linear regression line
+```
+
+```{r,include=TRUE}
+set.seed(955)
+# Make some noisily increasing data
+dat <- data.frame(xvar = 1:20 + rnorm(20,sd=3),
+                  yvar = 1:20 + rnorm(20,sd=3))
+
+
+ggplot(dat, aes(x=xvar, y=yvar)) +
+    geom_point(shape=1) +    # Use hollow circles
+    geom_smooth(method=lm, fill="#9AF308") # Add linear regression line
+  
+
+
+```
+

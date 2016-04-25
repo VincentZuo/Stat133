@@ -1,0 +1,283 @@
+---
+title: "Lec17"
+author: ""
+date: ""
+output: 
+  html_document:
+    fig_height: 3
+    fig_width: 5
+---
+<!-- Don't edit in between this line and the one below -->
+```{r include=FALSE}
+# Don't delete this chunk if you are using the DataComputing package
+library(DataComputing)
+library(printr)
+```
+*Source file* 
+```{r, results='asis', echo=FALSE}
+includeSourceDocuments()
+```
+
+```{r, echo=FALSE}
+show_answers <- TRUE
+knitr::opts_chunk$set(tidy=FALSE, message=FALSE)
+
+```
+
+<!-- Don't edit the material above this line -->
+
+# Today
+1. Advanced looping (chapter 4 in Data Camp's Intermediate R)
+
+
+# 1. Advanced Looping --- `lapply()` and `sapply()` (chapter 4 Data Camp's Intermediate R)
+
+## Motivation 
+
+Here is a function to convert fahrenheit to celsius
+
+```{r}
+to_celsius <- function(x) {
+  (x-32)*5/9
+}
+```
+
+The function `to_celsius` happens to be a vectorized function:
+
+```{r}
+to_celsius(c(32, 40, 50, 60, 70))
+```
+
+Here is another example of a vectorized function:
+
+```{r}
+square_me <- function(vec) vec^2
+square_me(c(1,2,3))
+```
+
+What happens in this situation?
+
+```{r,eval=FALSE}
+# trying to_celsius() on a list
+to_celsius(list(32, 40, 50, 60, 70))
+```
+Outputs: Error in x - 32 : non-numeric argument to binary operator
+
+
+`to_celsius()` does not work with a list.
+
+One solution is to use a for loop:
+
+```{r}
+temps_farhrenheit <- list(c(32, 40, 50, 60, 70))
+temps_celsius=c()
+
+for(temp in temps_farhrenheit){
+  temps_celsius <- c(temps_celsius,to_celsius(temp))
+}
+temps_celsius
+```
+
+R provides a set of functions to “vectorize” functions over
+the elements of lists. 
+
+1. `lapply()`
+2. `sapply()`
+3. `vapply()`
+
+These functions allow us to avoid writing loops and creates faster more readable code.
+
+The simplest apply function is lapply()
+
+## lapply()
+
+lapply() stands for list apply.
+It takes a list or vector and a function as inputs and returns a list. 
+
+example:
+
+Suppose we want to know the class of the elements of the following list.
+
+```{r}
+nyc <-  list(pop = 8404837, boroughs =c ("Manhattan", "Bronx", "Brooklyn", "Queens", "Staten Island"), capital = FALSE)
+```
+
+Instead of writing a for loop to do this you can use `lapply()`
+
+```{r}
+nyc %>% lapply(class)
+```
+
+
+The output of lapply is a list. 
+
+
+example:
+
+```{r}
+players <- list(
+warriors = c('kurry', 'iguodala', 'thompson', 'green'),
+cavaliers = c('james', 'shumpert', 'thompson'),
+rockets = c('harden', 'howard')
+)
+
+players %>% lapply(length)
+
+
+```
+
+It applies the function to length() each element of the list. The output is another list.
+
+## Task for you
+
+
+
+ Here is a list of three vectors of numbers from the normal distribution.
+```{r}
+mylist <- list(rnorm(3), rnorm(3), rnorm(5))
+mylist
+```
+
+Find the minimum of each element in mylist.
+
+
+```{r, include=show_answers}
+#using lapply
+
+min_list <- mylist %>% lapply(min) %>% unlist()   #unlist() converts a list to a vector
+min_list  
+```
+
+
+What about functions that take more than one argument?
+
+`paste()` concatenates elements of a vector connecting them with the value of the arguement `collapse`
+
+
+```{r}
+paste(c("stat", 133, "go"), collapse= "-")
+```
+
+after the function argument in lapply we put the extra arguements of the functions.
+
+```{r}
+players %>% lapply(paste, collapse = '-')
+```
+
+
+You can use your own functions in `lapply()`
+
+```{r}
+num_chars <- function(x) {
+nchar(x)
+}
+lapply(players, num_chars)
+```
+
+
+```{r}
+num_chars1 <- function(x,y) {
+nchar(x) + y
+}
+players %>% lapply( num_chars1, 3)
+```
+
+You can define a function with no name (an "anonymous" function)
+
+```{r}
+1:3 %>% lapply(function(x) x^2)
+```
+
+another example:
+
+the `passte()` function connects the string "mr" with each of the Warrior player's last name.
+
+```{r}
+paste("mr",c('kurry', 'iguodala', 'thompson', 'green'))
+```
+
+
+To apply `paste()` to the list of players:
+
+```{r}
+players %>% lapply( function(x) paste("mr",x))
+```
+
+
+## Task for you
+
+```{r}
+nchar(c("adam","jim"))
+```
+
+
+Use lapply to add two to the number of characters in each of player's name in `players`
+```{r, include=show_answers}
+players %>% lapply(function(x) nchar(x) +2) 
+```
+
+
+Remember that a data.frame and a matrix is internally stored as a list.
+
+```{r}
+df <- data.frame(
+  name = c('Luke', 'Leia', 'R2-D2', 'C-3PO'),
+  gender = c('male', 'female', 'male', 'male'),
+  height = c(1.72, 1.50, 0.96, 1.67),
+  weight = c(77, 49, 32, 75)
+)
+
+df %>% lapply(class)
+```
+
+
+
+
+## sapply
+
+
+`sapply()` is a modified version of `lapply()`.
+
+`sapply() stands for simplified apply and will output the result as an array if possilbe.
+
+
+
+```{r}
+1:3 %>% sapply(function(x) x^2)
+```
+
+Here we output a 1 dimensional array (i.e. a vector)
+Notice this is the same as
+
+```{r}
+1:3 %>% lapply(function(x) x^2) %>% unlist()
+```
+
+We have seen examples where the list output by `lapply()` have elements that are vectors of different size. It isn't possible to coerce this to be an array since all the rows of an array must be the same size. However, if the output of lapply() has vectors of equal length, we can display our results as an array.
+`
+
+for example:
+
+```{r}
+first_and_last <- function(name){
+    name <-  gsub(" ","",name)
+    letters <-  strsplit(name,split = "")[[1]]
+    c(first=min(letters), last=max(letters))
+}
+ 
+first_and_last("New York") 
+```
+
+
+now lets apply this function to the following vector of cities.
+
+```{r}
+cities <- c("New York", "Paris", "London", "Tokyo", "Rio de Janeiro", "Cape Town")
+
+cities %>% sapply(first_and_last)
+```
+
+Notice that the output is a two dimensional array with meaningful row and column names.
+
+In data camp you will learn about `vapply()` which has the same output as `sapply()` but is faster to run because you specify size of the array you are outputting ahead of time. 
+

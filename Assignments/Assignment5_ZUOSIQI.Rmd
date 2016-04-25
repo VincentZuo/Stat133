@@ -1,0 +1,68 @@
+---
+title: "Untitled"
+author: ""
+date: ""
+output: 
+  html_document:
+    fig_height: 3
+    fig_width: 5
+---
+<!-- Don't edit in between this line and the one below -->
+```{r include=FALSE}
+# Don't delete this chunk if you are using the DataComputing package
+library(DataComputing)
+```
+*Source file* 
+```{r, results='asis', echo=FALSE}
+includeSourceDocuments()
+```
+<!-- Don't edit the material above this line -->
+
+```{r fig.height= 6, fig.width= 9}
+
+load('ScorecardSmall.Rda')
+NPT4.names = read.csv('NPT4-names.csv')
+
+MyTemp <- ScorecardSmall %>%
+  gather(key = long_name, value = NETCOST, NPT41_PUB:NPT45_PRIV)
+
+MyTemp <- MyTemp %>%
+  filter(NETCOST != "NA" & CONTROL != 3 & CCSIZSET != 1 & CCSIZSET !=6 & CCSIZSET != 7 & CCSIZSET != 8) %>%
+  select(CONTROL, INSTNM, ADM_RATE, NPT41_PUB:NPT45_PRIV) 
+
+MyTemp <- MyTemp %>%
+  gather(key = long_name, value = money, NPT41_PUB:NPT45_PRIV) %>%
+  mutate(money = money / 1000, ADM_RATE = ADM_RATE * 100)
+
+MyTemp <- NPT4.names %>%
+  left_join(MyTemp)
+
+MyTemp <- MyTemp %>%
+  filter(short_name != "Q2" & short_name != "Q4")
+
+MyTemp <- MyTemp %>%
+  mutate(CONTROL = ifelse(CONTROL == 1, "Public", "Private"))
+
+
+set.seed(955)
+
+ggplot(MyTemp, aes(x = ADM_RATE, y = money)) + 
+
+  geom_point(alpha = 0.25, col = "blue", size = 3) + 
+  facet_grid(CONTROL ~ short_name) +
+  geom_smooth(method = "auto", fill = "grey", color = "red") + 
+  labs(title="Score Card", y = "Net cost per year, $'000", x="Admission rate, %") +
+  theme(plot.title = element_text(size = 25, colour = "#000000"),  
+        axis.title.x = element_text(size = 15, colour = "#000000"),  
+        axis.title.y = element_text(size = 15, colour = "#000000"),
+        axis.text.x = element_text(size = 10), 
+        axis.text.y = element_text(size = 10),
+        strip.text.x = element_text(size = 15, colour = "#000000"),
+        strip.text.y = element_text(size = 15, colour = "#000000"),
+        plot.background = element_rect(fill = "#cccccc"),
+        panel.grid.major = element_line(colour = "#cccccc"),
+        panel.grid.minor = element_blank(),
+        panel.background = element_rect(fill = "#ffffff"))
+
+
+```

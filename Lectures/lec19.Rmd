@@ -1,0 +1,385 @@
+---
+title: "lec19"
+author: "stat 133"
+date: ""
+output: 
+  html_document:
+    fig_height: 5
+    fig_width: 7
+---
+<!-- Don't edit in between this line and the one below -->
+```{r include=FALSE}
+# Don't delete this chunk if you are using the DataComputing package
+library(DataComputing)
+library(printr)
+library(ggthemes)
+```
+*Source file* 
+```{r, results='asis', echo=FALSE}
+includeSourceDocuments()
+```
+
+
+```{r, echo=FALSE}
+show_answers <- FALSE
+knitr::opts_chunk$set(tidy=FALSE, message=FALSE)
+
+```
+
+<!-- Don't edit the material above this line -->
+
+```{r, include=FALSE}
+theme_blank <-  theme(axis.ticks=element_blank(), 
+                      axis.text=element_blank(), 
+                      panel.background=element_blank())
+theme_blank_y <-  theme(axis.ticks.y=element_blank(), 
+                      axis.text.y=element_blank(), 
+                      panel.background=element_blank())
+```
+
+
+
+```{r echo=FALSE}
+NCHS <-
+  NCHS %>%
+  filter( !is.na(diabetic) ) %>%
+  mutate( diabetic=ifelse(diabetic==1,"Diabetic","Not"))
+```
+# Announcement 
+
+I have added an "in class" mini project to HW 7. I intend to start on it today if there is time and finish it on Monday. There will be no new material covered on Monday we will just work on the mini project. 
+
+
+# Today
+1. Distributions and Statistics (Chap 14 in book) This is the end of Midterm material.
+2. Start mini project
+
+# Distributions and Statistics
+
+We will look at a few few more glyphs that are helpful in statistics namely `geom_density()` or `geom_smooth()` and `geom_boxplot()` or `geom_violin()`. A density plot is essentially a histogram with infinitesimally small bins. They are useful for describing the distribution of a continuous random variable x. You can approximately see the mean, standard deviation and median from the density plot. 
+
+A boxplot or violin plot gives information about the interquartile range, in otherwords the spread of the 25th, 50th and 75th percentile of a random variable x. It is helpful for viewing outliers. 
+
+
+## Distribution of a random variable
+
+recall the `NCHS` (National Center of Health Statistics) data table:
+```{r}
+NCHS %>% 
+  select(sex,age, diabetic,weight) %>%
+  head()
+```
+
+This is a sample of 5000 individuals representing the US population from 1999 to 2004.
+
+To start, consider the `weight` variable in the `NCHS` data.  Of course, weight varies from person to person; there is a **distribution** of weights from case to case.  
+
+Sometimes it's helpful to show this distribution, what values are common, what values are rare, what values never show up.  
+
+### Density 
+
+Naïvely, this might be done by drawing a weight axis and putting on it a point for each case:
+
+```{r echo=TRUE, fig.height=1, fig.width=5, message=FALSE, warning=FALSE}
+
+theme_blank_y <-  theme(axis.ticks.y=element_blank(), 
+                      axis.text.y=element_blank(), 
+                      panel.background=element_blank())
+
+ggplot( NCHS, aes(x=weight,y=1) ) + geom_point( alpha=1, size=1 )  + ylab("") + xlab("Weight (kg)") + theme_blank_y
+```
+
+This graph shows some familiar facts: humans tend not to be lighter than a few kilograms, and tend not to be heavier than about 150 kg.  Between these limits, there seems to be no detail.
+
+This is misleading, the result of having so many cases (`r nrow(NCHS)`) to plot. All those cases lead to ink saturation.  One way to overcome this problem is by using transparency, another is to *jitter* the individual points.  The result is this:
+
+```{r echo=TRUE, fig.height=2, fig.width=5,message=FALSE, warning=FALSE}
+ggplot( NCHS, aes(x=weight,y=1) ) + geom_point( alpha=.1, size=1, position="jitter" ) +  ylab("") + xlab("Weight (kg)") +theme_blank_y
+```
+
+This is a much more satisfactory display; the ink saturation has been greatly reduced and now detail in the distribution of weights can be seen.  For instance, the most common weights are between 55 and 90 kg, and that weights less than 20 kg are also pretty common.  There aren't so many people with weights near 30kg, and very few over 120 kg.
+
+The visual impression is due to collective properties of the data.  Every individual glyph is identical, but for weights where the glyphs are densely packed, the impression the glyphs collectively give is of darkness.  Unfortunately, people are not very good at comparing different levels of darkness.
+
+The collective property of density is conventionally displayed as a another kind of glyph that displays the collective density property using position instead of darkness, like this:
+
+```{r, message=FALSE, warning=FALSE}
+ggplot( NCHS, aes(x=weight) ) + 
+  geom_density(color="gray", fill="gray", alpha=.75) + 
+  xlab("Weight (kg)") + ylab( "Density (1/kg)")
+```
+
+
+This is smooth version of a histogram. The x axis is a continuous variable, and the units of the y axis is % per horizontal unit. If you integrate over the whole curve you will get an area of 100%. In other words it is 100% certain that an observation has some weight. In this case the units of the y axis is "inverse kilograms" and the area under the entire density curve is 1. This scale is arranged so that the area under the entire density curve is 1.  This convention facilitates densities for different groups, e.g. male versus female. It also means that narrow distributions tend to have high density.]  
+
+To help see the translation between the density as vertical position and the density as darkness, here is an unusual graph format that combines both.
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+ggplot( NCHS, aes(x=weight) ) + 
+  geom_density(color="gray", fill="gray", alpha=.75) + 
+  geom_point( alpha=.03, position=position_jitter(height=.002), aes(y=0.002)) + 
+  xlab("Weight (kg)") + ylab( "Density (1/kg)")
+```
+
+Density glyphs can be used to compare distributions for different groups.  You need merely indicate which variable should be used for grouping.  For instance, here are the densities of body weight for each sex:
+
+```{r, message=FALSE, warning=FALSE}
+ggplot( NCHS, aes(x=weight, group=sex) ) + 
+  geom_density(aes(color=sex, fill=sex), alpha=.5) + 
+  xlab("Weight (kg)") + ylab( "Density (1/kg)")
+```
+
+The density shows detail, but is often a fairly simple shape.  This allows you to place densities side by side for comparison.  For instance, here people are being divided into different age groups.
+
+```{r, message=FALSE, warning=FALSE}
+NCHS <- 
+  NCHS %>% 
+  mutate( ageGroup=
+      ntiles(age, n=6, format="interval") )
+```
+```{r out.width="90%", message=FALSE, warning=FALSE}
+NCHS %>%
+  ggplot( aes(x=weight, group=sex) ) + 
+  geom_density(aes(color=sex, fill=sex), alpha=.25) + 
+  xlab("Weight (kg)") + ylab( "Density (1/kg)") + 
+  facet_wrap( ~ ageGroup )
+```
+
+This graphic tells a rich story.  For young children the two sexes have almost identical distributions.  For kids from 5 to 13 years, the distributions are still similar, though you can see that some girls have grown faster, producing a somewhat higher density near 50 kg.  From the teenage years on, the distribution for men is shifter to somewhat higher weight than for women.  This shift stays pretty much constant for the rest of life.
+
+As always, the best choice of a mapping between variables and graphical attributes depends on what aspect of the data you would like to emphasize.  For instance, to see how weight changes with age, you might prefer to use `sex` as the faceting variable and `age` as the grouping variable.
+
+```{r out.width="90%", fig.height=6,fig.width=9, message=FALSE, warning=FALSE}
+NCHS %>%
+  ggplot( aes(x=weight, group=ageGroup) ) + 
+  geom_density(aes(color=ageGroup, fill=ageGroup), alpha=.25) + 
+  xlab("Weight (kg)") + ylab( "Density (1/kg)") + 
+  facet_wrap( ~ sex ) + theme(text = element_text(size = 20))
+```
+
+## Task for you:
+
+```{r}
+
+```
+
+Here is the `CPS85` data table
+
+```{r}
+CPS85 %>% head()
+```
+
+Write the `ggplot()` statements that will construct the following plot
+
+```{r,  message=FALSE, warning=FALSE, echo=show_answers}
+CPS85 %>% 
+  ggplot(aes(x=wage)) + geom_density(aes(fill=sex), alpha=.5) + facet_grid(.~married) + ggtitle("Density plot of Wages") + xlim(0,30)  + theme(text = element_text(size = 20))
+```
+
+### Simple depictions of distribution
+
+The detail in the density curves can be visually overwhelming: there's a lot of detail in each density curve.  To simplify the graph, sometimes a more stylized depiction of the distribution is helpful.  This makes it feasible to put the distributions side-by-side for comparison.  The most common such depiction is the *box and whisker* glyph. 
+
+```{r, message=FALSE, warning=FALSE}
+NCHS %>%
+  ggplot( aes(y=weight, x=ageGroup ) ) + 
+  geom_boxplot(
+    aes(color=ageGroup, fill=ageGroup), 
+    alpha=.25, outlier.size=1, outlier.colour="gray") + 
+  ylab("Weight (kg)") + xlab( "Age Group (yrs)") + 
+  facet_wrap( ~ sex )
+```
+
+The box-and-whisker glyph shows the extent of the middle 50% of the distribution as a box.  The whiskers show the range of the top and bottom quarter of the distribution.  When there are uncommon, extremely high or low values --- called "outliers" --- they are displayed as individual dots for each of the outlier cases.
+
+
+## Task for you
+
+Reconstruct this graphic using `ggplot()` from the `CPS85` data table
+
+```{r, echo=show_answers}
+CPS85 %>%
+  ggplot(aes(x=sex,y=wage)) + geom_boxplot(aes( fill=sex))
+```
+
+
+
+
+The *violin* glyph provides a similar ease of comparison to the box-and-whisker glyph, but shows more detail in the density. 
+
+```{r, message=FALSE, warning=FALSE}
+NCHS %>%
+  ggplot( aes(y=weight, x=ageGroup) ) + 
+  geom_violin( aes(color=ageGroup, fill=ageGroup), 
+    alpha=.25) + 
+  ylab("Weight (kg)") + xlab( "Age Group (yrs)") + 
+  facet_wrap( ~ sex )
+```
+
+Both the box-and-whisker and violin glyphs use ink very efficiently.  This allows you to show other data.  For instance, here's the same box-and-whisker plot, but with people with diabetics shown in red.
+
+```{r, message=FALSE, warning=FALSE}
+Diabetics <-
+  NCHS %>% filter( diabetic=="Diabetic" )
+Nondiabetics <-
+  NCHS %>% filter( diabetic=="Not" )
+Nondiabetics %>%
+  ggplot( aes(y=weight, x=ageGroup) ) + 
+  geom_boxplot(
+    aes(color=ageGroup, fill=ageGroup), 
+    alpha=.25, outlier.size=1, outlier.colour="gray") + 
+  ylab("Weight (kg)") + xlab( "Age Group (yrs)") + 
+  facet_wrap( ~ sex ) + 
+  geom_boxplot( data=Diabetics, width=.3,color='red',
+                outlier.colour="lightpink",alpha=.2)
+```
+
+Maybe this is a better graph?
+
+
+
+```{r, message=FALSE, warning=FALSE}
+NCHS %>%
+  ggplot(aes(y=weight, x=ageGroup)) + geom_boxplot(aes(fill=diabetic), position = position_dodge(width = 0.8),outlier.size = 1, outlier.colour = "gray", alpha=.75) + facet_grid(.~sex) + ylab("Weight (kg)") + xlab("Age Group (yrs)")
+```
+
+
+
+
+
+You can see that diabetics tend to be heavier than non-diabetics, especially for ages 19+.
+
+
+
+## Confidence Intervals
+
+ 
+Statistical inference refers to an assessment of the *strength* of evidence for a claim.  For instance, in interpreting the plot above, it was claimed that diabetics tend to be heavier than non-diabetics.  Perhaps this is just an accident.  Might it be that there are so few diabetics that their weight distribution is not well known?
+
+The *confidence interval* of a statistic tells how much uncertainty there is due to the size of the sample.  Smaller-sized samples provide weaker evidence and their confidence intervals are longer than produced by larger-sized samples.
+
+A 95% CI of the median wage in the CPS85 study is an interval centered at the sample median wage that has a 95 percent chance of covering the true population median wage. Here is an illustration:
+
+95% CI: ![](/Users/Adam/Desktop/stat133lectures_hw_lab/CI.png)
+
+
+
+
+A box-and-whiskers glyph can show the confidence interval of the median by means of a "notch". There is a 95% chance that the notch contains the true wage median. Overlap between the notches in two boxes indicates that the evidence for a difference is weak.
+
+
+```{r, }
+CPS85 %>%
+  ggplot(aes(x=sex,y=wage)) + geom_boxplot(aes( fill=sex), notch = TRUE)
+```
+
+
+
+
+```{r, message=FALSE, warning=FALSE}
+NCHS %>%
+  ggplot(aes(y=weight, x=ageGroup)) + geom_boxplot(aes(fill=diabetic), notch=TRUE, position = position_dodge(width = 0.8),outlier.size = 1, outlier.colour = "gray", alpha=.75) + facet_grid(.~sex) + ylab("Weight (kg)") + xlab("Age Group (yrs)")
+```
+
+
+
+
+
+```{r, message=FALSE, warning=FALSE, include=FALSE}
+Nondiabetics %>%
+  ggplot( aes(y=weight, x=ageGroup) ) + 
+  geom_boxplot(
+    aes(color=ageGroup, fill=ageGroup), 
+    alpha=.25, outlier.size=2, notch=TRUE,
+    outlier.colour="gray") + 
+  ylab("Weight (kg)") + xlab( "Age Group (yrs)") + 
+  facet_wrap( ~ sex ) + 
+  geom_boxplot( data=Diabetics, width=.3,
+                color='red',
+                outlier.colour="lightpink",
+                alpha=.2, notch=TRUE )
+```
+
+## Model Functions
+
+A *function* is one way of describing a relationship between input and output.  Often it's helpful to use a function estimated from data.
+
+For example, consider the relationship between weight and age in the NHANES data. Is it the same for diabetics and non-diabetics? 
+
+```{r, message=FALSE, warning=FALSE}
+NCHS %>% 
+  ggplot( aes(x=age, y=weight, color=diabetic ) ) +
+  stat_smooth(se=FALSE, method="loess" ) 
+```
+
+There are two functions here, calculated by `stat_smooth()` from the age and weight variables. One function is for diabetics, the other for non-diabetics. Each function gives just one weight value for each age, rather than the distribution seen in the raw data.  That value is^[Roughly.  The function is smoothed over a range of close ages.] the mean weight at each age.  From the functions, it seems that the diabetics are consistently heavier than the non-diabetics, at least on average.  At age 30, that average difference is more than 20kg, less for people near 80.
+
+The confidence interval will show the precision of the function.  This is so important to interpreting the graphic that the default in `stat_smooth()` is to calculate and show the confidence interval unless the user specifically asks not to.
+
+```{r, message=FALSE, warning=FALSE}
+NCHS %>% 
+  ggplot( aes(x=age, y=weight, color=diabetic ) ) +
+  stat_smooth(method="loess" ) 
+```
+
+The width of the band represents the certainty of the average weight for a given age.
+
+The function for non-diabetics has a narrow confidence interval; you have to look hard to even see the gray zone. The confidence interval for diabetics, however, is noticeably wide. For ages below about 20, the non-diabetic and diabetic confindence intervals overlap.  This means that there is only weak evidence that diabetics as a group in this age group differ in weight from non-diabetics.  Around age 20, the two functions' confidence intervals do not overlap.  This indicates stronger evidence that the groups in the 20+ age bracket do differ in average weight.
+
+You might ask, why the confidence interval for the diabetics is so much wider than for the non-diabetics?  And why is the diabetic confidence interval broad in some places and narrow in others?
+
+The width of a confidence interval depends on three things:
+
+* the amount of variation in the value of y at or near the x value.
+* the number of cases close to the x value
+* the extent to which the function is an extrapolation.
+
+You can see all these things by plotting out the individual cases in another graphical layer.
+
+```{r, message=FALSE, warning=FALSE}
+NCHS %>% 
+  ggplot( aes(x=age, y=weight, color=diabetic ) ) +
+  stat_smooth( ) +
+  geom_point( data=Diabetics, color="red", alpha=.2) 
+```
+
+There are only a handful of cases with age less than 20, and hardly any with age less than 10: that's why the confidence interval for diabetics is wide there.  On the other hand, there are lots of cases for age greater than 60.
+
+
+This sort of function, called a "smoother", is able to bend with the data.  A much more commonly used function --- the "linear" function --- is utterly stiff; it can't bend at all.  You can construct this sort of function from the data with `method=lm` as an argument to `stat_smooth()`.
+
+```{r, message=FALSE, warning=FALSE}
+NCHS %>% 
+  ggplot( aes(x=age, y=weight, color=diabetic ) ) +
+  stat_smooth( method=lm ) +
+  geom_point( data=Diabetics, color="red", alpha=.2) 
+```
+
+
+
+
+
+
+In this situation, a linear function is too stiff.  The function for non-diabetics slopes up at high ages not because older non-diabetics in fact weigh less than middle-aged diabetics, but because the line needs to accomodate both the children (light in weight) and the adults (who are heavier).
+
+You'll often see linear functions in the scientific literature.  This is for several reasons, some good and some bad:
+
+* Linear functions generally have tighter confidence intervals than smoothers. (A good reason)
+* People are familiar with straight-line functions from high school. (A bad reason)
+* Many people don't know about non-linear functions such as a smoother. (A bad reason)
+
+A simple rule of thumb: When in doubt, use a smoother.
+
+How wide is the CI band in a linear regression plot?  Recall from lecture 13 we derived the equation for the variance of the position of the regression line above a point $x_0$ is given by the equation
+
+$$Var(\widehat{M}(x_0))=\frac{\sigma^2}{n} + \frac{(x_0-\overline{x})^2\sigma^2}{\sum_{i=1}^{n}(x_i-\overline{x})^2}.$$
+
+The square root of $Var(\widehat{M}(x_0))$ is the width of the the regression line above the data point $x_0$.
+From this equation you can see why statistical theory indicates that the width of a confidence band on n points goes as $\frac{1}{\sqrt{n}$.
+
+
+## Task for you
+
+If I quadruple the size of my sample (i.e. I make n 4  times bigger), will my happen to the size of the confidence interval? Will it get bigger or smaller? By how much?
+
+
